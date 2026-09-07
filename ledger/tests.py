@@ -227,3 +227,28 @@ class ExpenseFilterTests(TestCase):
         Expense.objects.for_user(self.alice).delete()
         response = self.client.get(reverse("expense-list"))
         self.assertContains(response, "No expenses yet")
+
+
+class SeedDemoCommandTests(TestCase):
+    def test_seed_matches_prototype_figures_and_is_idempotent(self):
+        from django.core.management import call_command
+
+        call_command("seed_demo", user="demo")
+        user = User.objects.get(username="demo")
+        expenses = Expense.objects.for_user(user)
+        self.assertEqual(expenses.count(), 16)
+        total = sum(expenses.values_list("amount", flat=True))
+        self.assertEqual(total, Decimal("12450.00"))
+        call_command("seed_demo", user="demo")
+        self.assertEqual(Expense.objects.for_user(user).count(), 16)
+
+    def test_seed_clear_wipes_first(self):
+        from django.core.management import call_command
+
+        user = User.objects.create_user("demo2")
+        food = Category.objects.for_user(user).get(name="Food")
+        Expense.objects.create(owner=user, amount=1, category=food, note="stale")
+        call_command("seed_demo", user="demo2", clear=True)
+        self.assertFalse(
+            Expense.objects.for_user(user).filter(note="stale").exists()
+        )
