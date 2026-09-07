@@ -7,7 +7,7 @@ from django.db import IntegrityError
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import DEFAULT_CATEGORIES, Category, Expense
+from .models import DEFAULT_CATEGORIES, Budget, Category, Expense
 
 User = get_user_model()
 
@@ -252,3 +252,91 @@ class SeedDemoCommandTests(TestCase):
         self.assertFalse(
             Expense.objects.for_user(user).filter(note="stale").exists()
         )
+
+
+class BudgetModelTests(TestCase):
+    def setUp(self):
+        from datetime import date
+
+        self.user = User.objects.create_user("budgeter")
+        self.food = Category.objects.for_user(self.user).get(name="Food")
+        self.september = date(2026, 9, 1)
+
+    def test_ensure_creates_rows_with_default_limits(self):
+        from .budgets import ensure_month_budgets
+
+        budgets = ensure_month_budgets(self.user, self.september)
+        self.assertEqual(len(budgets), 5)
+        food = [b for b in budgets if b.category.name == "Food"][0]
+        self.assertEqual(food.limit, Decimal("3000.00"))
+        self.assertEqual(food.month, self.september)
+
+    def test_ensure_inherits_previous_month_limit(self):
+        from .budgets import ensure_month_budgets
+        from datetime import date
+
+        Budget.objects.create(
+            owner=self.user,
+            category=self.food,
+            month=date(2026, 8, 1),
+            limit=Decimal("3500"),
+        )
+        budgets = ensure_month_budgets(self.user, self.september)
+        food = [b for b in budgets if b.category.name == "Food"][0]
+        self.assertEqual(food.limit, Decimal("3500.00"))
+
+    def test_ensure_is_idempotent(self):
+        from .budgets import ensure_month_budgets
+
+        ensure_month_budgets(self.user, self.september)
+        ensure_month_budgets(self.user, self.september)
+        self.assertEqual(
+            Budget.objects.for_user(self.user)
+            .filter(month=self.september)
+            .count(),
+            5,
+        )
+
+    def test_used_sums_only_month_and_category(self):
+        from datetime import date
+
+        from .budgets import ensure_month_budgets
+
+        fun = Category.objects.for_user(self.user).get(name="Fun")
+        Expense.objects.create(
+            owner=self.user, amount=100, date=date(2026, 9, 5), category=self.food
+        )
+        Expense.objects.create(
+            owner=self.user, amount=50, date=date(2026, 8, 5), category=self.food
+        )
+        Expense.objects.create(
+            owner=self.user, amount=70, date=date(2026, 9, 5), category=fun
+        )
+        budgets = ensure_month_budgets(self.user, self.september)
+        food = [b for b in budgets if b.category.name == "Food"][0]
+        self.assertEqual(food.used, Decimal("100.00"))
+        self.assertEqual(food.remaining, Decimal("2900.00"))
+        self.assertEqual(food.percent_used, 3)
+
+    def test_warning_at_ninety_percent(self):
+        from .budgets import ensure_month_budgets
+        from datetime import date
+
+        Expense.objects.create(
+            owner=self.user, amount=2860, date=date(2026, 9, 5), category=self.food
+        )
+        budgets = ensure_month_budgets(self.user, self.september)
+        food = [b for b in budgets if b.category.name == "Food"][0]
+        self.assertTrue(food.is_warning)
+        self.assertEqual(food.percent_used, 95)
+
+    def test_duplicate_budget_rejected(self):
+        from django.db import IntegrityError
+
+        Budget.objects.create(
+            owner=self.user, category=self.food, month=self.september, limit=100
+        )
+        with self.assertRaises(IntegrityError):
+            Budget.objects.create(
+                owner=self.user, category=self.food, month=self.september, limit=200
+            )

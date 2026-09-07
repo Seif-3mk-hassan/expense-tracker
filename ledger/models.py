@@ -62,3 +62,53 @@ class Expense(OwnedModel):
 
     def __str__(self):
         return f"{self.amount} on {self.date} ({self.category.name})"
+
+
+class Budget(OwnedModel):
+    """One monthly spending limit per category (US-08)."""
+
+    category = models.ForeignKey(
+        Category, on_delete=models.CASCADE, related_name="budgets"
+    )
+    month = models.DateField(help_text="First day of the budgeted month.")
+    limit = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal("0"))],
+    )
+
+    class Meta:
+        ordering = ["category__name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["owner", "category", "month"],
+                name="unique_budget_per_owner_category_month",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.category.name} {self.month:%Y-%m}: {self.limit}"
+
+    @property
+    def used(self):
+        from .budgets import month_bounds
+
+        start, end = month_bounds(self.month)
+        qs = Expense.objects.for_user(self.owner).filter(
+            category=self.category, date__gte=start, date__lte=end
+        )
+        return qs.aggregate(total=models.Sum("amount"))["total"] or Decimal("0")
+
+    @property
+    def remaining(self):
+        return self.limit - self.used
+
+    @property
+    def percent_used(self):
+        if self.limit <= 0:
+            return 0
+        return min(100, round(float(self.used / self.limit) * 100))
+
+    @property
+    def is_warning(self):
+        return self.percent_used >= 90

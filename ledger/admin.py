@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Category, Expense
+from .models import Budget, Category, Expense
 
 
 @admin.register(Category)
@@ -13,3 +13,9 @@ class CategoryAdmin(admin.ModelAdmin):
 class ExpenseAdmin(admin.ModelAdmin):
     list_display = ("owner", "amount", "date", "category", "payment")
     list_filter = ("payment", "date")
+
+
+@admin.register(Budget)
+class BudgetAdmin(admin.ModelAdmin):
+    list_display = ("owner", "category", "month", "limit")
+    list_filter = ("month",)
