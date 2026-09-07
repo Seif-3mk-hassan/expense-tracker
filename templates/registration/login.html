@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Log in — Xpens{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Welcome back</h1>
+  <p class="sub">Log in to track your spending.</p>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="btn" type="submit">Log in</button>
+  </form>
+  <p class="alt">No account? <a href="{% url 'signup' %}">Sign up</a></p>
+</div>
+{% endblock %}
