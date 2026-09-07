@@ -340,3 +340,56 @@ class BudgetModelTests(TestCase):
             Budget.objects.create(
                 owner=self.user, category=self.food, month=self.september, limit=200
             )
+
+
+class BudgetListViewTests(TestCase):
+    def setUp(self):
+        from datetime import date
+
+        self.user = User.objects.create_user("viewer")
+        self.other = User.objects.create_user("other")
+        self.today = date.today().replace(day=1)
+        self.client.force_login(self.user)
+
+    def test_login_required(self):
+        self.client.logout()
+        response = self.client.get(reverse("budget-list"))
+        self.assertRedirects(response, reverse("login") + "?next=/budgets/")
+
+    def test_view_ensures_month_rows_and_shows_them(self):
+        response = self.client.get(reverse("budget-list"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            Budget.objects.for_user(self.user).filter(month=self.today).count(), 5
+        )
+        self.assertContains(response, "Food")
+
+    def test_only_own_budgets_shown(self):
+        from .budgets import ensure_month_budgets
+
+        ensure_month_budgets(self.other, self.today)
+        response = self.client.get(reverse("budget-list"))
+        budgets = list(response.context["budgets"])
+        self.assertTrue(budgets)
+        self.assertTrue(all(b.owner == self.user for b in budgets))
+
+    def test_warning_style_on_nearly_spent_budget(self):
+        from datetime import date
+
+        food = Category.objects.for_user(self.user).get(name="Food")
+        Expense.objects.create(
+            owner=self.user, amount=2900, date=date.today(), category=food
+        )
+        response = self.client.get(reverse("budget-list"))
+        self.assertContains(response, 'class="pbar"><i class="warn"')
+
+    def test_seed_creates_september_budgets(self):
+        from django.core.management import call_command
+
+        call_command("seed_demo", user="demo")
+        demo = User.objects.get(username="demo")
+        food_budget = Budget.objects.for_user(demo).get(
+            category__name="Food", month__year=2026, month__month=9
+        )
+        self.assertEqual(food_budget.limit, Decimal("3000.00"))
+        self.assertEqual(food_budget.used, Decimal("2615.00"))

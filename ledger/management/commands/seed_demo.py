@@ -68,6 +68,9 @@ class Command(BaseCommand):
         total = sum(
             Expense.objects.for_user(account).values_list("amount", flat=True)
         )
+        from ledger.budgets import ensure_month_budgets
+
+        ensure_month_budgets(account, date(2026, 9, 1))
         self.stdout.write(
             f"Seeded {made} new expenses for '{user}'. Month total: {total} EGP."
         )

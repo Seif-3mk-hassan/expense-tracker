@@ -43,7 +43,7 @@
 <header class="top">
   <span class="brand">Xpens</span>
   {% if user.is_authenticated %}
-  <nav class="tabs"><a href="{% url 'home' %}">Home</a><a href="{% url 'expense-list' %}">Expenses</a></nav>
+  <nav class="tabs"><a href="{% url 'home' %}">Home</a><a href="{% url 'expense-list' %}">Expenses</a><a href="{% url 'budget-list' %}">Budgets</a></nav>
   {% endif %}
   <span class="sp"></span>
   {% if user.is_authenticated %}

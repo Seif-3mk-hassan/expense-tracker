@@ -1,0 +1,5 @@
+{# Single budget progress bar. Reused by the budgets page now and the dashboard in S4. Expects ``b``. #}
+<div class="bud">
+  <div class="row"><b>{{ b.category.icon }} {{ b.category.name }} · {{ b.limit|floatformat:0 }}</b><span>{{ b.used|floatformat:0 }} used</span></div>
+  <div class="pbar"><i class="{% if b.is_warning %}warn{% endif %}" style="width:{{ b.percent_used }}%"></i></div>
+</div>

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Budgets — Xpens{% endblock %}
+{% block extra_css %}
+  .page{max-width:960px;margin:0 auto;padding:28px 20px 60px}
+  .page h1{font-size:22px;margin-bottom:18px}
+  .bgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:860px){.bgrid{grid-template-columns:1fr}}
+  .bcard{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px}
+  .bcard h2{font-size:15px}
+  .bcard .big{font-size:24px;font-weight:800;margin:6px 0 10px}
+  .bcard .foot{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:13px}
+  .left.ok{color:var(--mint)} .left.over{color:var(--danger)}
+  .bud{margin-bottom:4px}
+  .bud .row{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px}
+  .pbar{height:9px;background:#242C44;border-radius:99px;overflow:hidden}
+  .pbar i{display:block;height:100%;border-radius:99px;background:var(--grad)}
+  .pbar i.warn{background:linear-gradient(135deg,#FBBF24,#FB7185)}
+  .btn-s{padding:9px 16px;border:1px solid var(--line);background:none;color:var(--ink);
+    border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;text-decoration:none}
+{% endblock %}
+{% block content %}
+<div class="page">
+  <h1>Budgets</h1>
+  <div class="bgrid">
+    {% for b in budgets %}
+    <section class="bcard">
+      <h2>{{ b.category.icon }} {{ b.category.name }}</h2>
+      <div class="big">{{ b.used|floatformat:0 }} / {{ b.limit|floatformat:0 }}</div>
+      {% include "ledger/_budget_bar.html" with b=b %}
+      <div class="foot">
+        <span class="left {% if b.is_warning %}over{% else %}ok{% endif %}">{{ b.remaining|floatformat:0 }} EGP left</span>
+      </div>
+    </section>
+    {% empty %}
+    <p>No budgets this month.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

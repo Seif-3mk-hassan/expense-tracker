@@ -3,10 +3,12 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
 from django.shortcuts import render
 from django.urls import reverse_lazy
+from django.utils import timezone
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView
 
+from .budgets import ensure_month_budgets, month_start
 from .forms import ExpenseForm
-from .models import Category, Expense
+from .models import Budget, Category, Expense
 
 
 @login_required
@@ -113,3 +115,19 @@ class ExpenseUpdateView(OwnerScopedMixin, UpdateView):
 class ExpenseDeleteView(OwnerScopedMixin, DeleteView):
     template_name = "ledger/expense_confirm_delete.html"
     success_url = reverse_lazy("expense-list")
+
+
+class BudgetListView(LoginRequiredMixin, ListView):
+    """Monthly budget cards; also ensures the month's rows exist (US-09)."""
+
+    template_name = "ledger/budget_list.html"
+    context_object_name = "budgets"
+
+    def get_queryset(self):
+        month = month_start(timezone.now().date())
+        ensure_month_budgets(self.request.user, month)
+        return (
+            Budget.objects.for_user(self.request.user)
+            .filter(month=month)
+            .select_related("category")
+        )
