@@ -393,3 +393,55 @@ class BudgetListViewTests(TestCase):
         )
         self.assertEqual(food_budget.limit, Decimal("3000.00"))
         self.assertEqual(food_budget.used, Decimal("2615.00"))
+
+
+class BudgetUpdateTests(TestCase):
+    def setUp(self):
+        from .budgets import ensure_month_budgets
+        from datetime import date
+
+        self.user = User.objects.create_user("editor")
+        self.other = User.objects.create_user("other")
+        self.today = date.today().replace(day=1)
+        ensure_month_budgets(self.user, self.today)
+        ensure_month_budgets(self.other, self.today)
+        self.budget = Budget.objects.for_user(self.user).get(
+            category__name="Food", month=self.today
+        )
+        self.client.force_login(self.user)
+
+    def test_edit_updates_limit(self):
+        response = self.client.post(
+            reverse("budget-edit", args=[self.budget.pk]), {"limit": "3500"}
+        )
+        self.assertRedirects(response, reverse("budget-list"))
+        self.budget.refresh_from_db()
+        self.assertEqual(self.budget.limit, Decimal("3500.00"))
+
+    def test_negative_limit_rejected(self):
+        response = self.client.post(
+            reverse("budget-edit", args=[self.budget.pk]), {"limit": "-5"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.budget.refresh_from_db()
+        self.assertEqual(self.budget.limit, Decimal("3000.00"))
+
+    def test_category_and_month_cannot_change(self):
+        fun = Category.objects.for_user(self.user).get(name="Fun")
+        self.client.post(
+            reverse("budget-edit", args=[self.budget.pk]),
+            {"limit": "3500", "category": fun.pk, "month": "2026-01-01"},
+        )
+        self.budget.refresh_from_db()
+        self.assertEqual(self.budget.category.name, "Food")
+        self.assertEqual(self.budget.month, self.today)
+
+    def test_edit_other_users_budget_returns_404(self):
+        other_budget = Budget.objects.for_user(self.other).get(
+            category__name="Food", month=self.today
+        )
+        url = reverse("budget-edit", args=[other_budget.pk])
+        self.assertEqual(self.client.get(url).status_code, 404)
+        self.assertEqual(
+            self.client.post(url, {"limit": "1"}).status_code, 404
+        )

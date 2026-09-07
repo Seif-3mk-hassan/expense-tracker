@@ -29,6 +29,7 @@
       {% include "ledger/_budget_bar.html" with b=b %}
       <div class="foot">
         <span class="left {% if b.is_warning %}over{% else %}ok{% endif %}">{{ b.remaining|floatformat:0 }} EGP left</span>
+        <a class="btn-s" href="{% url 'budget-edit' b.pk %}">Edit</a>
       </div>
     </section>
     {% empty %}

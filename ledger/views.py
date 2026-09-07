@@ -131,3 +131,15 @@ class BudgetListView(LoginRequiredMixin, ListView):
             .filter(month=month)
             .select_related("category")
         )
+
+
+class BudgetUpdateView(LoginRequiredMixin, UpdateView):
+    """Change a category's limit. Only ``limit`` is editable by design (US-10)."""
+
+    model = Budget
+    fields = ["limit"]
+    template_name = "ledger/budget_form.html"
+    success_url = reverse_lazy("budget-list")
+
+    def get_queryset(self):
+        return Budget.objects.for_user(self.request.user)
