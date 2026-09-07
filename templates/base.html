@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Xpens{% endblock %}</title>
+<style>
+  :root{
+    --bg:#0B0E14; --card:#141926; --ink:#F2F4F8; --muted:#8B93A7;
+    --line:rgba(255,255,255,.08); --mint:#5EEAD4; --violet:#A78BFA;
+    --danger:#FB7185; --grad:linear-gradient(135deg,#A78BFA 0%,#5EEAD4 100%);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--ink);min-height:100vh}
+  .top{display:flex;align-items:center;gap:12px;padding:16px 28px;border-bottom:1px solid var(--line)}
+  .brand{font-size:19px;font-weight:800}
+  .top .sp{flex:1}
+  .top .who{font-size:13px;color:var(--muted)}
+  .top button{background:none;border:1px solid var(--line);color:var(--ink);border-radius:10px;
+    padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+  .top button:hover{border-color:var(--mint)}
+  .wrap{max-width:520px;margin:0 auto;padding:48px 20px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:28px}
+  .card h1{font-size:22px;margin-bottom:6px}
+  .card p.sub{font-size:13.5px;color:var(--muted);margin-bottom:18px}
+  label{display:block;font-size:12.5px;color:var(--muted);font-weight:600;margin:12px 0 6px}
+  input{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:12px;
+    font-size:15px;font-family:inherit;background:var(--bg);color:var(--ink)}
+  input:focus{outline:none;border-color:var(--mint)}
+  .btn{width:100%;margin-top:18px;padding:14px;border:none;border-radius:12px;
+    background:var(--grad);color:#0B0E14;font-size:15px;font-weight:800;cursor:pointer}
+  .alt{margin-top:14px;font-size:13.5px;color:var(--muted);text-align:center}
+  .alt a{color:var(--mint)}
+  .errorlist{list-style:none;margin:10px 0;font-size:13px;color:var(--danger)}
+</style>
+</head>
+<body>
+<header class="top">
+  <span class="brand">Xpens</span>
+  <span class="sp"></span>
+  {% if user.is_authenticated %}
+    <span class="who">{{ user.username }}</span>
+    <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit">Log out</button></form>
+  {% endif %}
+</header>
+<main class="wrap">
+  {% block content %}{% endblock %}
+</main>
+</body>
+</html>
