@@ -4,6 +4,6 @@
 <div class="card">
   <h1>Welcome, {{ user.username }}</h1>
   <p class="sub">Foundation is live. Your dashboard arrives in Sprint 4.</p>
-  <p class="sub"><a href="/admin/" style="color:var(--mint)">Admin</a></p>
+  <p class="sub"><a href="{% url 'expense-list' %}" style="color:var(--mint)">Expenses</a> · <a href="/admin/" style="color:var(--mint)">Admin</a></p>
 </div>
 {% endblock %}

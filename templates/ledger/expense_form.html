@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{% if object %}Edit{% else %}Add{% endif %} expense — Xpens{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>{% if object %}Edit expense{% else %}Add expense{% endif %}</h1>
+  <p class="sub">It takes less than 5 seconds.</p>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="btn" type="submit">Save</button>
+  </form>
+</div>
+{% endblock %}

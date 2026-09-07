@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Delete expense — Xpens{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Delete this expense?</h1>
+  <p class="sub">{{ object.amount }} EGP · {{ object.category }} · {{ object.date }}{% if object.note %} · {{ object.note }}{% endif %}</p>
+  <form method="post">
+    {% csrf_token %}
+    <button class="btn" type="submit">Yes, delete it</button>
+  </form>
+  <p class="alt"><a href="{% url 'expense-list' %}">Keep it</a></p>
+</div>
+{% endblock %}
