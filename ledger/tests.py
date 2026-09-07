@@ -172,3 +172,58 @@ class ExpenseCrudTests(TestCase):
         response = self.client.post(reverse("expense-delete", args=[mine.pk]))
         self.assertRedirects(response, reverse("expense-list"))
         self.assertFalse(Expense.objects.filter(pk=mine.pk).exists())
+
+
+class ExpenseFilterTests(TestCase):
+    def setUp(self):
+        self.alice = User.objects.create_user("alice")
+        self.bob = User.objects.create_user("bob")
+        self.food = Category.objects.for_user(self.alice).get(name="Food")
+        self.fun = Category.objects.for_user(self.alice).get(name="Fun")
+        Expense.objects.create(
+            owner=self.alice, amount=180, category=self.food, note="Lunch Kazlak"
+        )
+        Expense.objects.create(
+            owner=self.alice, amount=850, category=self.fun, note="Steam game"
+        )
+        Expense.objects.create(
+            owner=self.bob,
+            amount=999,
+            category=Category.objects.for_user(self.bob).get(name="Food"),
+            note="Lunch elsewhere",
+        )
+        self.client.force_login(self.alice)
+
+    def test_search_matches_note(self):
+        response = self.client.get(reverse("expense-list") + "?q=kazlak")
+        self.assertContains(response, "180.00")
+        self.assertNotContains(response, "850.00")
+
+    def test_search_matches_category_name(self):
+        response = self.client.get(reverse("expense-list") + "?q=fun")
+        self.assertContains(response, "850.00")
+        self.assertNotContains(response, "180.00")
+
+    def test_category_filter(self):
+        response = self.client.get(
+            reverse("expense-list") + f"?category={self.fun.pk}"
+        )
+        self.assertContains(response, "850.00")
+        self.assertNotContains(response, "180.00")
+
+    def test_search_never_leaks_other_users_rows(self):
+        response = self.client.get(reverse("expense-list") + "?q=lunch")
+        self.assertContains(response, "180.00")
+        self.assertNotContains(response, "999.00")
+
+    def test_forged_other_user_category_shows_empty_state(self):
+        other_cat = Category.objects.for_user(self.bob).get(name="Fun")
+        response = self.client.get(
+            reverse("expense-list") + f"?category={other_cat.pk}"
+        )
+        self.assertContains(response, "No expenses match your filters.")
+
+    def test_unfiltered_empty_state(self):
+        Expense.objects.for_user(self.alice).delete()
+        response = self.client.get(reverse("expense-list"))
+        self.assertContains(response, "No expenses yet")

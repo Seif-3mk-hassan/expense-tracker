@@ -1,11 +1,12 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Q
 from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView
 
 from .forms import ExpenseForm
-from .models import Expense
+from .models import Category, Expense
 
 
 @login_required
@@ -20,14 +21,43 @@ class OwnerScopedMixin(LoginRequiredMixin):
         return Expense.objects.for_user(self.request.user)
 
 
+def filter_expenses(user, params):
+    """Shared search + category filtering over one user's expenses (US-06)."""
+    expenses = Expense.objects.for_user(user)
+    query = params.get("q", "").strip()
+    if query:
+        expenses = expenses.filter(
+            Q(note__icontains=query) | Q(category__name__icontains=query)
+        )
+    category_id = params.get("category", "").strip()
+    if category_id.isdigit():
+        expenses = expenses.filter(category__pk=int(category_id))
+    return expenses, query, category_id
+
+
 class ExpenseListView(OwnerScopedMixin, ListView):
     template_name = "ledger/expense_list.html"
     context_object_name = "expenses"
 
+    def get_queryset(self):
+        expenses, _, _ = filter_expenses(self.request.user, self.request.GET)
+        return expenses
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["form"] = ExpenseForm(user=self.request.user)
-        context["show_modal"] = False
+        _, query, category_id = filter_expenses(self.request.user, self.request.GET)
+        context.update(
+            {
+                "form": ExpenseForm(user=self.request.user),
+                "show_modal": False,
+                "q": query,
+                "selected_category": category_id,
+                "categories": Category.objects.for_user(self.request.user).filter(
+                    active=True
+                ),
+                "is_filtered": bool(query or category_id),
+            }
+        )
         return context
 
 
@@ -47,11 +77,23 @@ class ExpenseCreateView(OwnerScopedMixin, CreateView):
 
     def form_invalid(self, form):
         if self.request.POST.get("from_modal"):
-            expenses = Expense.objects.for_user(self.request.user)
+            expenses, query, category_id = filter_expenses(
+                self.request.user, self.request.GET
+            )
             return render(
                 self.request,
                 "ledger/expense_list.html",
-                {"expenses": expenses, "form": form, "show_modal": True},
+                {
+                    "expenses": expenses,
+                    "form": form,
+                    "show_modal": True,
+                    "q": query,
+                    "selected_category": category_id,
+                    "categories": Category.objects.for_user(self.request.user).filter(
+                        active=True
+                    ),
+                    "is_filtered": bool(query or category_id),
+                },
                 status=400,
             )
         return super().form_invalid(form)

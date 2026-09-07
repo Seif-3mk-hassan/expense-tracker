@@ -4,6 +4,11 @@
   .page{max-width:960px;margin:0 auto;padding:28px 20px 60px}
   .row{display:flex;align-items:center;gap:12px;margin-bottom:18px}
   .row h1{font-size:22px;flex:1}
+  .filters{display:flex;gap:10px;margin-bottom:14px}
+  .filters input,.filters select{background:var(--card);border:1px solid var(--line);
+    border-radius:12px;padding:10px 14px;font-size:14px;font-family:inherit;color:var(--ink)}
+  .filters input{flex:1;min-width:0}
+  .filters input:focus,.filters select:focus{outline:none;border-color:var(--mint)}
   .btn-p{background:var(--ink);color:#fff;border:none;border-radius:12px;padding:11px 20px;
     font-size:14px;font-weight:700;cursor:pointer;background:var(--grad);color:#0B0E14}
   table{width:100%;border-collapse:collapse;font-size:14px;background:var(--card);
@@ -31,6 +36,15 @@
     <h1>Expenses</h1>
     <button class="btn-p" onclick="document.getElementById('ov').classList.add('open')">+ Add expense</button>
   </div>
+  <form class="filters" method="get">
+    <input name="q" value="{{ q }}" placeholder="Search note or category…">
+    <select name="category" onchange="this.form.submit()">
+      <option value="">All categories</option>
+      {% for c in categories %}
+      <option value="{{ c.pk }}"{% if c.pk|stringformat:"s" == selected_category %} selected{% endif %}>{{ c }}</option>
+      {% endfor %}
+    </select>
+  </form>
   {% if expenses %}
   <table>
     <tr><th>Note</th><th>Category</th><th>Date</th><th>Payment</th><th class="r">Amount</th><th></th></tr>
@@ -46,7 +60,11 @@
     {% endfor %}
   </table>
   {% else %}
+  {% if is_filtered %}
+  <div class="empty">No expenses match your filters.</div>
+  {% else %}
   <div class="empty">No expenses yet — add your first one above.</div>
+  {% endif %}
   {% endif %}
 </div>
 
