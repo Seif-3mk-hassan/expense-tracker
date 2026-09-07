@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23A78BFA'/%3E%3Cstop offset='1' stop-color='%235EEAD4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='9' fill='url(%23g)'/%3E%3Ccircle cx='21' cy='9.5' r='5.8' fill='%230B0E14' stroke='%230B0E14' stroke-width='1'/%3E%3Ctext x='21' y='12.6' text-anchor='middle' font-family='Arial,sans-serif' font-size='7.5' font-weight='800' fill='%235EEAD4'%3E%C2%A3%3C/text%3E%3Crect x='6' y='14' width='20' height='11' rx='3' fill='%230B0E14'/%3E%3Crect x='9' y='16.8' width='6' height='1.6' rx='0.8' fill='%235EEAD4' opacity='0.45'/%3E%3Ccircle cx='20' cy='19.5' r='2' fill='%235EEAD4'/%3E%3Ccircle cx='20' cy='19.5' r='0.8' fill='%230B0E14'/%3E%3C/svg%3E">
+<title>Xpens — Expense Tracker (Dark)</title>
+<style>
+  :root{
+    --bg:#0B0E14; --card:#141926; --card2:#1B2233; --ink:#F2F4F8; --muted:#8B93A7;
+    --line:rgba(255,255,255,.08); --mint:#5EEAD4; --violet:#A78BFA; --lime:#D4F65A;
+    --danger:#FB7185; --grad:linear-gradient(135deg,#A78BFA 0%,#5EEAD4 100%);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background:radial-gradient(600px 300px at 15% -5%,rgba(167,139,250,.12),transparent 60%),
+               radial-gradient(700px 320px at 90% 0%,rgba(94,234,212,.09),transparent 60%)}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-thumb{background:#242C44;border-radius:99px;border:2px solid var(--bg)}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::selection{background:rgba(167,139,250,.4)}
+  .app{display:flex;min-height:100vh;position:relative;z-index:1}
+  /* ---- sidebar ---- */
+  .side{width:248px;flex:none;background:#0E1220;border-right:1px solid var(--line);
+    padding:26px 16px;display:flex;flex-direction:column;gap:4px;
+    position:sticky;top:0;height:100vh}
+  .logo{display:flex;align-items:center;gap:10px;padding:0 12px 24px;
+    font-size:20px;font-weight:800;letter-spacing:-.5px}
+  .logo svg{width:32px;height:32px;flex:none}
+  .nav a{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:12px;
+    text-decoration:none;color:var(--muted);font-size:14.5px;font-weight:600}
+  .nav a.active{background:var(--grad);color:#0B0E14}
+  .nav a:not(.active):hover{color:var(--ink);background:rgba(255,255,255,.04)}
+  .nav .ico2{width:22px;text-align:center}
+  .side .user{margin-top:auto;display:flex;align-items:center;gap:10px;
+    border-top:1px solid var(--line);padding:14px 10px 2px}
+  .avatar{width:36px;height:36px;border-radius:50%;background:var(--grad);flex:none;
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#0B0E14}
+  .side .user b{display:block;font-size:13.5px}
+  .side .user span{font-size:12px;color:var(--muted)}
+  /* ---- main ---- */
+  .main{flex:1;min-width:0;padding:26px 34px 60px;max-width:1180px;margin:0 auto;width:100%}
+  .topbar{display:flex;align-items:center;gap:14px;margin-bottom:22px;flex-wrap:wrap}
+  .topbar h1{font-size:23px;font-weight:700;letter-spacing:-.5px}
+  .topbar p{font-size:13px;color:var(--muted);margin-top:2px}
+  .search{margin-left:auto;display:flex;align-items:center;gap:8px;background:var(--card);
+    border:1px solid var(--line);border-radius:12px;padding:10px 14px;width:260px;color:var(--muted)}
+  .search input{border:none;background:none;outline:none;font-size:14px;width:100%;font-family:inherit;color:var(--ink)}
+  .month{background:var(--card);border:1px solid var(--line);border-radius:12px;color:var(--ink);
+    padding:10px 14px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer}
+  .btn-primary{background:var(--grad);color:#0B0E14;border:none;border-radius:12px;
+    padding:11px 20px;font-size:14px;font-weight:800;cursor:pointer;white-space:nowrap}
+  .btn-primary:hover{filter:brightness(1.08)}
+  /* ---- hero ---- */
+  .hero{background:var(--grad);border-radius:22px;padding:26px 28px;color:#0B0E14;
+    margin-bottom:14px;display:flex;align-items:center;gap:30px;flex-wrap:wrap;position:relative;overflow:hidden}
+  .hero::after{content:"";position:absolute;right:-70px;top:-70px;width:230px;height:230px;
+    border-radius:50%;background:rgba(255,255,255,.25)}
+  .hero>div:first-child{flex:1;min-width:230px;position:relative;z-index:1}
+  .hero small{font-size:12px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;opacity:.65}
+  .hero .num{font-size:50px;font-weight:800;letter-spacing:-2px;line-height:1.1}
+  .hero .cap{font-size:13px;font-weight:600;opacity:.75;margin-top:4px}
+  .htrack{height:8px;background:rgba(11,14,20,.18);border-radius:99px;overflow:hidden;margin-top:12px}
+  .htrack i{display:block;height:100%;width:62%;background:#0B0E14;border-radius:99px;opacity:.85}
+  .hero .hstat{margin-left:auto;display:flex;gap:34px;position:relative;z-index:1}
+  .hero .hstat div b{display:block;font-size:22px;font-weight:800}
+  .hero .hstat div span{font-size:12px;font-weight:600;opacity:.7}
+  /* ---- grid ---- */
+  .grid{display:grid;grid-template-columns:1.5fr 1fr;gap:14px;margin-bottom:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px;
+    transition:transform .15s ease,border-color .15s ease}
+  .card:hover{border-color:rgba(255,255,255,.16)}
+  .card h2{font-size:15px;font-weight:700}
+  .card .hint{font-size:12.5px;color:var(--muted);margin:3px 0 14px}
+  .card .head{display:flex;justify-content:space-between;align-items:center}
+  .card .head a{font-size:13px;color:var(--muted);text-decoration:none}
+  .card .head a:hover{color:var(--mint)}
+  .page{display:none}
+  .page.active{display:block;animation:fadeUp .28s ease}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .filters{display:flex;gap:10px;margin:14px 0 6px;flex-wrap:wrap}
+  .filters .search{flex:1;width:auto;margin:0;min-width:200px}
+  .filters .month{min-width:170px}
+  .bgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .bcard .big{font-size:24px;font-weight:800;margin:6px 0 10px}
+  .bcard .foot{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+  .left{font-size:13px;font-weight:700}
+  .left.ok{color:var(--mint)} .left.over{color:var(--danger)}
+  .btn-small{padding:9px 16px;border:1px solid var(--line);background:var(--card2);color:var(--ink);
+    border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+  .btn-small:hover{border-color:var(--mint)}
+  .btn-wide{width:100%;padding:13px;border:none;border-radius:12px;background:var(--grad);
+    color:#0B0E14;font-size:14px;font-weight:800;cursor:pointer;margin-top:14px;font-family:inherit}
+  .field{margin-bottom:12px}
+  .field label{font-size:12px;color:var(--muted);font-weight:600;display:block;margin-bottom:6px}
+  .field input,.field select{width:100%;padding:11px 13px;border:1px solid var(--line);
+    border-radius:11px;font-size:14px;font-family:inherit;background:var(--bg);color:var(--ink)}
+  .field input:focus,.field select:focus{outline:none;border-color:var(--mint)}
+  .hbar-row{display:flex;align-items:center;gap:12px;margin-bottom:12px;font-size:13.5px}
+  .hbar-row .m{width:36px;color:var(--muted);font-weight:600}
+  .hbar-row .grow{flex:1;height:10px;background:#242C44;border-radius:99px;overflow:hidden}
+  .hbar-row .grow i{display:block;height:100%;background:var(--grad);border-radius:99px}
+  .hbar-row em{font-style:normal;font-weight:700;min-width:70px;text-align:right}
+  .tip{margin-top:14px;background:rgba(94,234,212,.08);border:1px solid rgba(94,234,212,.3);
+    border-radius:12px;padding:12px 14px;font-size:13px}
+  @media(max-width:1100px){.bgrid{grid-template-columns:1fr}}
+  .chart{position:relative;display:flex;align-items:flex-end;gap:14px;height:220px;padding-top:34px}
+  .chart::before{content:"";position:absolute;left:0;right:0;top:34px;bottom:24px;
+    background:repeating-linear-gradient(to top,rgba(255,255,255,.06) 0 1px,transparent 1px 44px);
+    border-bottom:1px solid var(--line)}
+  .avg{position:absolute;left:0;right:0;border-top:2px dashed rgba(94,234,212,.5);z-index:2}
+  .avg em{position:absolute;right:0;top:-21px;font-style:normal;font-size:10.5px;
+    color:var(--mint);font-weight:700}
+  .col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+    height:100%;position:relative;z-index:1}
+  .col b{font-size:11.5px;font-weight:700;margin-bottom:7px}
+  .col.today b{color:var(--mint)}
+  .col i{width:100%;max-width:38px;border-radius:10px;background:var(--grad);display:block;
+    transform-origin:bottom;animation:grow .6s cubic-bezier(.2,.9,.3,1.2) backwards}
+  .col i:hover{filter:brightness(1.15)}
+  .col.max i{box-shadow:0 0 26px rgba(167,139,250,.5)}
+  .col.today i{outline:2px solid var(--mint);outline-offset:2px}
+  .col span{font-size:11px;color:var(--muted);height:24px;display:flex;align-items:center}
+  @keyframes grow{from{transform:scaleY(0)}}
+  .donut-row{display:flex;align-items:center;gap:20px}
+  .donut{width:130px;height:130px;border-radius:50%;flex:none;
+    background:conic-gradient(var(--mint) 0 38%,var(--violet) 38% 62%,var(--lime) 62% 78%,#2A3350 78% 100%);
+    display:flex;align-items:center;justify-content:center}
+  .donut div{width:88px;height:88px;border-radius:50%;background:var(--card);
+    display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .donut b{font-size:18px}
+  .donut span{font-size:10px;color:var(--muted)}
+  .legend{flex:1;display:flex;flex-direction:column;gap:10px;font-size:13.5px}
+  .legend div{display:flex;align-items:center;gap:9px}
+  .dot{width:10px;height:10px;border-radius:50%;flex:none}
+  .legend em{margin-left:auto;font-style:normal;color:var(--muted);font-weight:600}
+  .bud{margin-bottom:13px}
+  .bud:last-child{margin-bottom:0}
+  .bud .row{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px}
+  .bud .row b{font-weight:600}
+  .bud .row span{color:var(--muted)}
+  .pbar{height:9px;background:#242C44;border-radius:99px;overflow:hidden}
+  .pbar i{display:block;height:100%;border-radius:99px;background:var(--grad)}
+  .pbar i.warn{background:linear-gradient(135deg,#FBBF24,#FB7185)}
+  /* ---- table ---- */
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th{text-align:left;font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;
+    letter-spacing:.7px;padding:10px 10px;border-bottom:1px solid var(--line)}
+  td{padding:13px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  tbody tr:hover td{background:rgba(255,255,255,.025)}
+  .desc b{display:block;font-size:14px;font-weight:600}
+  .desc span{font-size:12px;color:var(--muted)}
+  .pill{display:inline-block;padding:5px 12px;border-radius:99px;font-size:12.5px;font-weight:700;background:var(--card2)}
+  .amt{text-align:right;font-weight:700;white-space:nowrap}
+  .full{margin-bottom:14px}
+  /* ---- modal ---- */
+  .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:20;
+    align-items:center;justify-content:center;padding:20px}
+  .overlay.open{display:flex}
+  .dialog{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:28px;
+    width:100%;max-width:460px;box-shadow:0 30px 80px rgba(0,0,0,.5);animation:fadeUp .22s ease}
+  .dialog h2{font-size:18px;margin-bottom:4px}
+  .dialog p{font-size:13px;color:var(--muted);margin-bottom:8px}
+  .dialog p b{color:var(--mint);border:1px solid var(--line);border-radius:6px;padding:0 6px;font-size:12px}
+  .dialog label{font-size:12px;color:var(--muted);font-weight:600;display:block;margin:12px 0 6px}
+  .dialog input{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;
+    font-size:15px;font-family:inherit;background:var(--bg);color:var(--ink)}
+  .dialog input:focus{outline:none;border-color:var(--mint)}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{padding:9px 14px;border:1.5px solid var(--line);border-radius:99px;font-size:13px;
+    cursor:pointer;font-weight:600;color:var(--muted)}
+  .chip.sel{background:var(--grad);color:#0B0E14;border-color:transparent}
+  .dlg-actions{display:flex;gap:10px;margin-top:20px}
+  .btn{flex:1;padding:14px;border:none;border-radius:12px;background:var(--grad);
+    color:#0B0E14;font-size:15px;font-weight:800;cursor:pointer}
+  .btn.ghost{background:var(--card2);color:var(--ink);font-weight:600}
+  @media(max-width:1100px){ .grid{grid-template-columns:1fr} }
+  @media(max-width:860px){
+    .side{width:76px;padding:22px 10px}
+    .logo{justify-content:center;padding:0 0 18px}
+    .logo span{display:none}
+    .nav a span:last-child,.side .user div{display:none}
+    .nav a{justify-content:center}
+    .search{display:none}
+    .main{padding:20px 16px 50px}
+    .hero .num{font-size:38px}
+    .hero .hstat{margin-left:0;gap:24px}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="logo"><svg viewBox="0 0 32 32"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#A78BFA"/><stop offset="1" stop-color="#5EEAD4"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#lg)"/><circle cx="21" cy="9.5" r="5.8" fill="#0B0E14"/><text x="21" y="12.6" text-anchor="middle" font-family="Arial,sans-serif" font-size="7.5" font-weight="800" fill="#5EEAD4">£</text><rect x="6" y="14" width="20" height="11" rx="3" fill="#0B0E14"/><rect x="9" y="16.8" width="6" height="1.6" rx="0.8" fill="#5EEAD4" opacity="0.45"/><circle cx="20" cy="19.5" r="2" fill="#5EEAD4"/><circle cx="20" cy="19.5" r="0.8" fill="#0B0E14"/></svg><span>Xpens</span></div>
+    <nav class="nav" id="mainnav">
+      <a href="#" class="active" onclick="return showPage('dashboard',this)"><span class="ico2">◉</span><span>Dashboard</span></a>
+      <a href="#" onclick="return showPage('expenses',this)"><span class="ico2">◎</span><span>Expenses</span></a>
+      <a href="#" onclick="return showPage('budgets',this)"><span class="ico2">⬔</span><span>Budgets</span></a>
+      <a href="#" onclick="return showPage('insights',this)"><span class="ico2">▦</span><span>Insights</span></a>
+      <a href="#" onclick="return showPage('settings',this)"><span class="ico2">⚙</span><span>Settings</span></a>
+    </nav>
+    <div class="user"><div class="avatar">S</div><div><b>Seif</b><span>Admin</span></div></div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div><h1 id="pg-title">September overview</h1><p id="pg-sub">Tracking in EGP · updated just now</p></div>
+      <div class="search">⌕ <input id="top-q" placeholder="Search expenses… (Enter ↵)" onkeydown="if(event.key==='Enter')topSearch(this.value)"></div>
+      <select class="month" onchange="setMonth(this.value)"><option>September 2026</option><option>August 2026</option><option>July 2026</option></select>
+      <button class="btn-primary" onclick="document.getElementById('ov').classList.add('open')">+ Add expense</button>
+    </div>
+
+    <div class="page active" id="pg-dashboard">
+    <section class="hero">
+      <div><small>Total spent</small><div class="num">12,450 EGP</div>
+      <div class="cap">62% of 20,000 budget · 7,550 left</div>
+      <div class="htrack"><i></i></div></div>
+      <div class="hstat">
+        <div><b>320</b><span>Today</span></div>
+        <div><b>415</b><span>Daily avg</span></div>
+        <div><b>−8%</b><span>vs August</span></div>
+      </div>
+    </section>
+
+    <div class="grid">
+      <section class="card">
+        <h2>This week</h2>
+        <div class="hint">Daily spending, Sat → Fri</div>
+        <div class="chart">
+          <div class="avg" style="bottom:121px" title="Daily average — 563 EGP"><em>avg 563</em></div>
+          <div class="col" title="Sat — 520 EGP"><b>520</b><i style="height:55%;animation-delay:.02s"></i><span>Sat</span></div>
+          <div class="col" title="Sun — 780 EGP"><b>780</b><i style="height:83%;animation-delay:.08s"></i><span>Sun</span></div>
+          <div class="col" title="Mon — 310 EGP"><b>310</b><i style="height:33%;animation-delay:.14s"></i><span>Mon</span></div>
+          <div class="col max" title="Tue — 940 EGP (highest)"><b>940</b><i style="height:100%;animation-delay:.2s"></i><span>Tue</span></div>
+          <div class="col" title="Wed — 460 EGP"><b>460</b><i style="height:49%;animation-delay:.26s"></i><span>Wed</span></div>
+          <div class="col" title="Thu — 610 EGP"><b>610</b><i style="height:65%;animation-delay:.32s"></i><span>Thu</span></div>
+          <div class="col today" title="Fri — 320 EGP (today)"><b>320</b><i style="height:34%;animation-delay:.38s"></i><span>Fri</span></div>
+        </div>
+      </section>
+      <section class="card">
+        <h2>Where it goes</h2>
+        <div class="hint">Top categories</div>
+        <div class="donut-row">
+          <div class="donut"><div><b>12.4k</b><span>EGP</span></div></div>
+          <div class="legend">
+            <div><span class="dot" style="background:var(--mint)"></span>Housing<em>48%</em></div>
+            <div><span class="dot" style="background:var(--violet)"></span>Food<em>24%</em></div>
+            <div><span class="dot" style="background:var(--lime)"></span>Transport<em>16%</em></div>
+            <div><span class="dot" style="background:#2A3350"></span>Other<em>12%</em></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="grid">
+      <section class="card full">
+        <div class="head"><h2>Recent expenses</h2><a href="#" onclick="return showPage('expenses')">View all →</a></div>
+        <div class="hint">Your latest transactions</div>
+        <table>
+          <tr><th>Description</th><th>Category</th><th>Date</th><th style="text-align:right">Amount</th></tr>
+          <tbody id="rows">
+            <tr><td class="desc"><b>Lunch — Kazlak</b><span>Cash</span></td><td><span class="pill" style="color:var(--mint)">Food</span></td><td>Today</td><td class="amt">−180 EGP</td></tr>
+            <tr><td class="desc"><b>Uber to campus</b><span>Credit card</span></td><td><span class="pill" style="color:var(--violet)">Transport</span></td><td>Today</td><td class="amt">−95 EGP</td></tr>
+            <tr><td class="desc"><b>Coffee</b><span>Cash</span></td><td><span class="pill" style="color:var(--mint)">Food</span></td><td>Today</td><td class="amt">−45 EGP</td></tr>
+            <tr><td class="desc"><b>Steam game</b><span>Debit card</span></td><td><span class="pill" style="color:var(--lime)">Fun</span></td><td>Sep 5</td><td class="amt">−850 EGP</td></tr>
+            <tr><td class="desc"><b>Rent — September</b><span>Bank transfer</span></td><td><span class="pill" style="color:#FBBF24">Housing</span></td><td>Sep 1</td><td class="amt">−6,000 EGP</td></tr>
+          </tbody>
+        </table>
+      </section>
+      <section class="card">
+        <div class="head"><h2>Budgets</h2><a href="#" onclick="return showPage('budgets')">Manage →</a></div>
+        <div class="hint">September limits</div>
+        <div class="bud"><div class="row"><b>🍔 Food · 3,000</b><span>2,860 used</span></div><div class="pbar"><i class="warn" style="width:95%"></i></div></div>
+        <div class="bud"><div class="row"><b>🚕 Transport · 2,000</b><span>1,240 used</span></div><div class="pbar"><i style="width:62%"></i></div></div>
+        <div class="bud"><div class="row"><b>🎮 Fun · 1,500</b><span>850 used</span></div><div class="pbar"><i style="width:57%"></i></div></div>
+        <div class="bud"><div class="row"><b>🏠 Housing · 7,000</b><span>6,000 used</span></div><div class="pbar"><i style="width:86%"></i></div></div>
+      </section>
+    </div>
+    </div><!-- /pg-dashboard -->
+
+    <div class="page" id="pg-expenses">
+      <section class="card">
+        <div class="head"><h2>All expenses</h2><a href="#">8 shown · 12,450 EGP total</a></div>
+        <div class="filters">
+          <div class="search">⌕ <input id="exp-q" placeholder="Search description…" oninput="filterExp()"></div>
+          <select class="month" id="exp-cat" onchange="filterExp()">
+            <option value="">All categories</option><option>Food</option><option>Transport</option>
+            <option>Housing</option><option>Fun</option><option>Other</option>
+          </select>
+        </div>
+        <table>
+          <tr><th>Description</th><th>Category</th><th>Date</th><th>Payment</th><th style="text-align:right">Amount</th></tr>
+          <tbody id="exp-rows">
+            <tr data-c="Food" data-s="lunch kazlak cash food"><td class="desc"><b>Lunch — Kazlak</b><span>Cash</span></td><td><span class="pill" style="color:var(--mint)">Food</span></td><td>Sep 7</td><td>Cash</td><td class="amt">−180 EGP</td></tr>
+            <tr data-c="Transport" data-s="uber campus credit card transport"><td class="desc"><b>Uber to campus</b><span>Credit card</span></td><td><span class="pill" style="color:var(--violet)">Transport</span></td><td>Sep 7</td><td>Credit card</td><td class="amt">−95 EGP</td></tr>
+            <tr data-c="Food" data-s="coffee cash food"><td class="desc"><b>Coffee</b><span>Cash</span></td><td><span class="pill" style="color:var(--mint)">Food</span></td><td>Sep 7</td><td>Cash</td><td class="amt">−45 EGP</td></tr>
+            <tr data-c="Fun" data-s="steam game debit card fun"><td class="desc"><b>Steam game</b><span>Debit card</span></td><td><span class="pill" style="color:var(--lime)">Fun</span></td><td>Sep 5</td><td>Debit card</td><td class="amt">−850 EGP</td></tr>
+            <tr data-c="Other" data-s="pharmacy debit card other"><td class="desc"><b>Pharmacy</b><span>Debit card</span></td><td><span class="pill" style="color:var(--muted)">Other</span></td><td>Sep 4</td><td>Debit card</td><td class="amt">−240 EGP</td></tr>
+            <tr data-c="Fun" data-s="netflix subscription credit card fun"><td class="desc"><b>Netflix</b><span>Credit card</span></td><td><span class="pill" style="color:var(--lime)">Fun</span></td><td>Sep 3</td><td>Credit card</td><td class="amt">−150 EGP</td></tr>
+            <tr data-c="Food" data-s="carrefour groceries cash food"><td class="desc"><b>Carrefour groceries</b><span>Cash</span></td><td><span class="pill" style="color:var(--mint)">Food</span></td><td>Sep 2</td><td>Cash</td><td class="amt">−1,120 EGP</td></tr>
+            <tr data-c="Housing" data-s="rent september bank transfer housing"><td class="desc"><b>Rent — September</b><span>Bank transfer</span></td><td><span class="pill" style="color:#FBBF24">Housing</span></td><td>Sep 1</td><td>Bank transfer</td><td class="amt">−6,000 EGP</td></tr>
+            <tr id="exp-empty" style="display:none"><td colspan="5" style="text-align:center;color:var(--muted);padding:26px">No expenses match your filters.</td></tr>
+          </tbody>
+        </table>
+      </section>
+    </div>
+
+    <div class="page" id="pg-budgets">
+      <div class="bgrid">
+        <section class="card bcard"><div class="head"><h2>🍔 Food</h2><a href="#">Monthly</a></div>
+          <div class="big">2,860 / 3,000</div><div class="pbar"><i class="warn" style="width:95%"></i></div>
+          <div class="foot"><span class="left over">140 EGP left — nearly there</span><button class="btn-small" onclick="alert('Edit budget (demo).')">Edit</button></div></section>
+        <section class="card bcard"><div class="head"><h2>🚕 Transport</h2><a href="#">Monthly</a></div>
+          <div class="big">1,240 / 2,000</div><div class="pbar"><i style="width:62%"></i></div>
+          <div class="foot"><span class="left ok">760 EGP left</span><button class="btn-small" onclick="alert('Edit budget (demo).')">Edit</button></div></section>
+        <section class="card bcard"><div class="head"><h2>🎮 Fun</h2><a href="#">Monthly</a></div>
+          <div class="big">850 / 1,500</div><div class="pbar"><i style="width:57%"></i></div>
+          <div class="foot"><span class="left ok">650 EGP left</span><button class="btn-small" onclick="alert('Edit budget (demo).')">Edit</button></div></section>
+        <section class="card bcard"><div class="head"><h2>🏠 Housing</h2><a href="#">Monthly</a></div>
+          <div class="big">6,000 / 7,000</div><div class="pbar"><i style="width:86%"></i></div>
+          <div class="foot"><span class="left ok">1,000 EGP left</span><button class="btn-small" onclick="alert('Edit budget (demo).')">Edit</button></div></section>
+      </div>
+    </div>
+
+    <div class="page" id="pg-insights">
+      <div class="grid">
+        <section class="card">
+          <h2>Spending by month</h2>
+          <div class="hint">Last 6 months</div>
+          <div style="margin-top:6px">
+            <div class="hbar-row"><span class="m">Apr</span><div class="grow"><i style="width:73%"></i></div><em>9.8k</em></div>
+            <div class="hbar-row"><span class="m">May</span><div class="grow"><i style="width:83%"></i></div><em>11.2k</em></div>
+            <div class="hbar-row"><span class="m">Jun</span><div class="grow"><i style="width:78%"></i></div><em>10.5k</em></div>
+            <div class="hbar-row"><span class="m">Jul</span><div class="grow"><i style="width:90%"></i></div><em>12.1k</em></div>
+            <div class="hbar-row"><span class="m">Aug</span><div class="grow"><i style="width:100%"></i></div><em>13.5k</em></div>
+            <div class="hbar-row"><span class="m">Sep</span><div class="grow"><i style="width:92%"></i></div><em>12.4k</em></div>
+          </div>
+        </section>
+        <section class="card">
+          <h2>Budget pressure</h2>
+          <div class="hint">Where limits bite hardest</div>
+          <div class="bud"><div class="row"><b>🍔 Food</b><span>95% used</span></div><div class="pbar"><i class="warn" style="width:95%"></i></div></div>
+          <div class="bud"><div class="row"><b>🏠 Housing</b><span>86% used</span></div><div class="pbar"><i style="width:86%"></i></div></div>
+          <div class="bud"><div class="row"><b>🚕 Transport</b><span>62% used</span></div><div class="pbar"><i style="width:62%"></i></div></div>
+          <div class="bud"><div class="row"><b>🎮 Fun</b><span>57% used</span></div><div class="pbar"><i style="width:57%"></i></div></div>
+          <div class="tip">💡 Food is at 95% with 3 weeks to go — consider raising it to 3,500 EGP next month.</div>
+        </section>
+      </div>
+    </div>
+
+    <div class="page" id="pg-settings">
+      <div class="grid">
+        <section class="card">
+          <h2>Profile</h2>
+          <div class="hint">Your account details</div>
+          <div class="field"><label>Name</label><input value="Seif"></div>
+          <div class="field"><label>Email</label><input value="2023170283@cis.asu.edu.eg"></div>
+          <div class="field"><label>Role</label><select><option>Admin</option><option>User</option></select></div>
+          <button class="btn-wide" onclick="alert('Saved (demo prototype).')">Save changes</button>
+        </section>
+        <div>
+          <section class="card" style="margin-bottom:14px">
+            <h2>Preferences</h2>
+            <div class="hint">How the app behaves</div>
+            <div class="field"><label>Currency</label>
+              <select><option>EGP — Egyptian Pound</option><option>USD — US Dollar</option><option>EUR — Euro</option></select></div>
+            <div class="field"><label>Month starts on</label>
+              <select><option>1st of month</option><option>15th of month</option><option>Salary day (28th)</option></select></div>
+          </section>
+          <section class="card">
+            <h2>Data</h2>
+            <div class="hint">Back up or restore as JSON</div>
+            <button class="btn-small" onclick="exportJSON()">⬇ Export JSON</button>
+            <button class="btn-small" onclick="document.getElementById('imp').click()">⬆ Import JSON</button>
+            <input type="file" id="imp" accept=".json" style="display:none" onchange="importJSON(this)">
+          </section>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="overlay" id="ov" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="dialog">
+    <h2>New expense</h2>
+    <p>It takes less than 5 seconds. Tip: press <b>N</b> anywhere to open this.</p>
+    <label>Amount (EGP)</label>
+    <input id="f-amt" type="number" placeholder="0" inputmode="decimal">
+    <label>Category</label>
+    <div class="chips" id="chips">
+      <span class="chip sel">🍔 Food</span><span class="chip">🚕 Transport</span>
+      <span class="chip">🏠 Housing</span><span class="chip">🎮 Fun</span><span class="chip">🛒 Other</span>
+    </div>
+    <label>Note</label>
+    <input id="f-note" type="text" placeholder="What was this for?">
+    <div class="dlg-actions">
+      <button class="btn ghost" onclick="document.getElementById('ov').classList.remove('open')">Cancel</button>
+      <button class="btn" onclick="addExpense()">Add expense</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.getElementById('chips').addEventListener('click', e => {
+    if (!e.target.classList.contains('chip')) return;
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('sel'));
+    e.target.classList.add('sel');
+  });
+  const colors = {'🍔':'var(--mint)','🚕':'var(--violet)','🏠':'#FBBF24','🎮':'var(--lime)','🛒':'var(--muted)'};
+  function addExpense() {
+    const amt = document.getElementById('f-amt').value;
+    const note = document.getElementById('f-note').value || 'New expense';
+    if (!amt || amt <= 0) { alert('Enter an amount first'); return; }
+    const cat = document.querySelector('.chip.sel').textContent;
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td class="desc"><b></b><span>Just now</span></td><td><span class="pill">' +
+      cat.slice(2) + '</span></td><td>Today</td><td class="amt">−' + Number(amt).toLocaleString() + ' EGP</td>';
+    tr.querySelector('b').textContent = note;
+    tr.querySelector('.pill').style.color = colors[cat[0]] || 'var(--muted)';
+    document.getElementById('rows').prepend(tr);
+    document.getElementById('ov').classList.remove('open');
+    document.getElementById('f-amt').value = '';
+    document.getElementById('f-note').value = '';
+  }
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') document.getElementById('ov').classList.remove('open');
+    const typing = /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName);
+    if ((e.key === 'n' || e.key === 'N') && !typing && !document.getElementById('ov').classList.contains('open')) {
+      e.preventDefault();
+      document.getElementById('ov').classList.add('open');
+    }
+  });
+  const TITLES = {
+    dashboard:['September overview','Tracking in EGP · updated just now'],
+    expenses:['Expenses','Filter and review every transaction'],
+    budgets:['Budgets','September limits by category'],
+    insights:['Insights','Trends across the last 6 months'],
+    settings:['Settings','Profile, preferences and data']
+  };
+  function showPage(name, el){
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('pg-' + name).classList.add('active');
+    el = el || document.querySelector('#mainnav a[onclick*="showPage(\'' + name + '\'"]');
+    document.querySelectorAll('#mainnav a').forEach(a => a.classList.remove('active'));
+    if (el) el.classList.add('active');
+    document.getElementById('pg-title').textContent = TITLES[name][0];
+    document.getElementById('pg-sub').textContent = TITLES[name][1];
+    window.scrollTo(0, 0);
+    return false;
+  }
+  function filterExp(){
+    const q = document.getElementById('exp-q').value.toLowerCase();
+    const c = document.getElementById('exp-cat').value;
+    let visible = 0;
+    document.querySelectorAll('#exp-rows tr').forEach(tr => {
+      if (tr.id === 'exp-empty') return;
+      const ok = tr.dataset.s.includes(q) && (!c || tr.dataset.c === c);
+      tr.style.display = ok ? '' : 'none';
+      if (ok) visible++;
+    });
+    document.getElementById('exp-empty').style.display = visible ? 'none' : '';
+  }
+  function topSearch(q){
+    showPage('expenses');
+    document.getElementById('exp-q').value = q;
+    filterExp();
+  }
+  function setMonth(m){
+    document.getElementById('pg-sub').textContent = 'Tracking in EGP · ' + m;
+  }
+  function exportJSON(){
+    const rows = [...document.querySelectorAll('#exp-rows tr')].map(tr => {
+      if (tr.id === 'exp-empty') return null;
+      return {
+        description: tr.cells[0].innerText, category: tr.dataset.c,
+        date: tr.cells[2].innerText, payment: tr.cells[3].innerText, amount: tr.cells[4].innerText
+      };
+    }).filter(Boolean);
+    const data = { exported: new Date().toISOString(), currency: 'EGP', expenses: rows };
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'}));
+    a.download = 'expenses-september-2026.json';
+    a.click();
+  }
+  function importJSON(input){
+    const f = input.files[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = () => {
+      try {
+        const d = JSON.parse(r.result);
+        const n = Array.isArray(d) ? d.length : (d.expenses || []).length;
+        alert('File looks valid — found ' + n + ' records. (Demo: nothing imported.)');
+      } catch(e){ alert('That file is not valid JSON.'); }
+    };
+    r.readAsText(f);
+    input.value = '';
+  }
+</script>
+</body>
+</html>
