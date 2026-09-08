@@ -54,7 +54,7 @@
       <td>{{ e.category }}</td>
       <td>{{ e.date }}</td>
       <td>{{ e.get_payment_display }}</td>
-      <td class="r">{{ e.amount }} EGP</td>
+      <td class="r">{{ e.amount }} {{ currency }}</td>
       <td class="r"><a href="{% url 'expense-edit' e.pk %}">Edit</a><a href="{% url 'expense-delete' e.pk %}">Delete</a></td>
     </tr>
     {% endfor %}

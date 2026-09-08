@@ -28,7 +28,7 @@
       <div class="big">{{ b.used|floatformat:0 }} / {{ b.limit|floatformat:0 }}</div>
       {% include "ledger/_budget_bar.html" with b=b %}
       <div class="foot">
-        <span class="left {% if b.is_warning %}over{% else %}ok{% endif %}">{{ b.remaining|floatformat:0 }} EGP left</span>
+        <span class="left {% if b.is_warning %}over{% else %}ok{% endif %}">{{ b.remaining|floatformat:0 }} {{ currency }} left</span>
         <a class="btn-s" href="{% url 'budget-edit' b.pk %}">Edit</a>
       </div>
     </section>

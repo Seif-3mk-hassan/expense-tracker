@@ -1,7 +1,6 @@
 """Dashboard and insights math over scoped querysets (US-11 and later)."""
 
-import calendar
-from datetime import date, timedelta
+from datetime import timedelta
 from decimal import Decimal
 
 from django.db.models import Sum
@@ -10,20 +9,22 @@ from .budgets import month_bounds, month_start
 from .models import Budget, Expense
 
 
-def month_expenses(user, ref):
-    start, end = month_bounds(ref)
+def month_expenses(user, ref, start_day=1):
+    start, end = month_bounds(ref, start_day)
     return Expense.objects.for_user(user).filter(date__gte=start, date__lte=end)
 
 
-def month_total(user, ref):
+def month_total(user, ref, start_day=1):
     return (
-        month_expenses(user, ref).aggregate(total=Sum("amount"))["total"]
+        month_expenses(user, ref, start_day).aggregate(total=Sum("amount"))[
+            "total"
+        ]
         or Decimal("0")
     )
 
 
-def budget_total(user, ref):
-    start, _ = month_bounds(ref)
+def budget_total(user, ref, start_day=1):
+    start, _ = month_bounds(ref, start_day)
     return (
         Budget.objects.for_user(user)
         .filter(month=start)
@@ -32,22 +33,34 @@ def budget_total(user, ref):
     )
 
 
-def days_elapsed(ref, today):
-    if (ref.year, ref.month) == (today.year, today.month):
-        return today.day
-    return calendar.monthrange(ref.year, ref.month)[1]
+def days_elapsed(ref, today, start_day=1):
+    start, end = month_bounds(ref, start_day)
+    if today < start or today > end:
+        return (end - start).days + 1
+    return (today - start).days + 1
 
 
-def daily_average(total, ref, today):
-    elapsed = days_elapsed(ref, today)
+def daily_average(total, ref, today, start_day=1):
+    elapsed = days_elapsed(ref, today, start_day)
     if elapsed <= 0:
         return Decimal("0")
     return round(total / elapsed, 2)
 
 
-def month_shift(ref, delta):
-    month = ref.month - 1 + delta
-    return date(ref.year + month // 12, month % 12 + 1, 1)
+def month_shift(ref, delta, start_day=1):
+    """First date of the period ``delta`` steps from ref's period."""
+    start, end = month_bounds(ref, start_day)
+    if delta >= 0:
+        current = start
+        for _ in range(delta):
+            _, period_end = month_bounds(current, start_day)
+            current = period_end + timedelta(days=1)
+        return current
+    current = start
+    for _ in range(-delta):
+        previous_end = current - timedelta(days=1)
+        current, _ = month_bounds(previous_end, start_day)
+    return current
 
 
 def pct_change(current, previous):
@@ -71,10 +84,10 @@ def last_n_days(user, today, n=7):
     return days
 
 
-def category_sums(user, ref):
+def category_sums(user, ref, start_day=1):
     """Per-category month totals, richest first: [{name, color, icon, total}]."""
     rows = (
-        month_expenses(user, ref)
+        month_expenses(user, ref, start_day)
         .values("category__name", "category__color", "category__icon")
         .annotate(total=Sum("amount"))
         .order_by("-total")
@@ -103,11 +116,11 @@ def donut_style(segments, total):
     return "conic-gradient(" + ", ".join(parts) + ")"
 
 
-def last_6_months(user, ref):
-    """Oldest-first (label, total) for the 6 months ending with ref's month."""
+def last_6_months(user, ref, start_day=1):
+    """Oldest-first (label, total) for the 6 periods ending with ref's period."""
     out = []
     for delta in range(-5, 1):
-        first = month_shift(ref, delta)
-        total = month_total(user, first)
+        first = month_shift(ref, delta, start_day)
+        total = month_total(user, first, start_day)
         out.append({"label": first.strftime("%b"), "total": total})
     return out

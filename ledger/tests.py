@@ -862,3 +862,77 @@ class CsvExportTests(TestCase):
         self.assertEqual(
             self.client.get(reverse("expense-export-csv")).status_code, 302
         )
+
+
+class PreferencesTests(TestCase):
+    def setUp(self):
+        from datetime import date
+
+        self.user = User.objects.create_user("prefy")
+        self.food = Category.objects.for_user(self.user).get(name="Food")
+        Expense.objects.create(
+            owner=self.user, amount=400, date=date(2026, 9, 12), category=self.food
+        )
+        self.client.force_login(self.user)
+
+    def test_custom_month_start_moves_spending_between_periods(self):
+        from .budgets import month_bounds
+
+        start, end = month_bounds(date(2026, 9, 20), start_day=15)
+        self.assertEqual((start.isoformat(), end.isoformat()), ("2026-09-15", "2026-10-14"))
+        start, end = month_bounds(date(2026, 9, 10), start_day=15)
+        self.assertEqual((start.isoformat(), end.isoformat()), ("2026-08-15", "2026-09-14"))
+
+    def test_settings_update_requeries_dashboard(self):
+        url = reverse("home") + "?month=2026-09"
+        hero = self.client.get(url).context["hero"]
+        self.assertEqual(hero["total"], Decimal("400.00"))
+        response = self.client.post(
+            reverse("settings"),
+            {
+                "first_name": "",
+                "last_name": "",
+                "email": "",
+                "currency": "USD",
+                "month_start_day": "10",
+            },
+        )
+        self.assertRedirects(response, reverse("settings"))
+        hero = self.client.get(url).context["hero"]
+        self.assertEqual(hero["total"], Decimal("0.00"))
+        dashboard = self.client.get(url)
+        self.assertContains(dashboard, "USD")
+
+    def test_invalid_month_start_rejected(self):
+        response = self.client.post(
+            reverse("settings"),
+            {
+                "first_name": "",
+                "last_name": "",
+                "email": "",
+                "currency": "EGP",
+                "month_start_day": "31",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        from accounts.models import get_profile
+
+        self.assertEqual(get_profile(self.user).month_start_day, 1)
+
+    def test_role_not_self_editable(self):
+        self.client.post(
+            reverse("settings"),
+            {
+                "first_name": "",
+                "last_name": "",
+                "email": "",
+                "currency": "EGP",
+                "month_start_day": "1",
+                "groups": "admin",
+            },
+        )
+        self.assertFalse(self.user.groups.filter(name="admin").exists())
+
+    def test_settings_requires_login(self):
+        self.client.logout()
+        self.assertEqual(self.client.get(reverse("settings")).status_code, 302)

@@ -91,9 +91,12 @@ class Budget(OwnedModel):
 
     @property
     def used(self):
+        from accounts.models import get_profile
+
         from .budgets import month_bounds
 
-        start, end = month_bounds(self.month)
+        start_day = get_profile(self.owner).month_start_day
+        start, end = month_bounds(self.month, start_day)
         qs = Expense.objects.for_user(self.owner).filter(
             category=self.category, date__gte=start, date__lte=end
         )

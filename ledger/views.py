@@ -158,11 +158,18 @@ class BudgetListView(LoginRequiredMixin, ListView):
     context_object_name = "budgets"
 
     def get_month(self):
-        return month_start(parse_month_param(self.request.GET) or timezone.now().date())
+        from accounts.models import get_profile
+
+        start_day = get_profile(self.request.user).month_start_day
+        return month_start(
+            parse_month_param(self.request.GET) or timezone.now().date(), start_day
+        ), start_day
 
     def get_queryset(self):
-        month = self.get_month()
-        ensure_month_budgets(self.request.user, month)
+        from accounts.models import get_profile
+
+        month, start_day = self.get_month()
+        ensure_month_budgets(self.request.user, month, start_day)
         return (
             Budget.objects.for_user(self.request.user)
             .filter(month=month)
@@ -171,7 +178,8 @@ class BudgetListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["month_label"] = self.get_month().strftime("%B %Y")
+        month, _ = self.get_month()
+        context["month_label"] = month.strftime("%B %Y")
         return context
 
 
@@ -194,16 +202,19 @@ class InsightsView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        from accounts.models import get_profile
+
         today = timezone.now().date()
         ref = parse_month_param(self.request.GET) or today
-        history = last_6_months(self.request.user, ref)
+        start_day = get_profile(self.request.user).month_start_day
+        history = last_6_months(self.request.user, ref, start_day)
         peak = max([h["total"] for h in history] or [0])
         for entry in history:
             entry["pct"] = (
                 round(float(entry["total"] / peak) * 100) if peak else 0
             )
-        start, _ = month_bounds(ref)
-        ensure_month_budgets(self.request.user, start)
+        start, _ = month_bounds(ref, start_day)
+        ensure_month_budgets(self.request.user, start, start_day)
         budgets = list(
             Budget.objects.for_user(self.request.user)
             .filter(month=start)
@@ -315,15 +326,23 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 
     template_name = "home.html"
 
+    def _start_day(self):
+        from accounts.models import get_profile
+
+        return get_profile(self.request.user).month_start_day
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         today = timezone.now().date()
         ref = parse_month_param(self.request.GET) or today
-        start, _ = month_bounds(ref)
-        ensure_month_budgets(self.request.user, start)
-        total = month_total(self.request.user, ref)
-        budget = budget_total(self.request.user, ref)
-        previous = month_total(self.request.user, month_shift(ref, -1))
+        start_day = self._start_day()
+        start, _ = month_bounds(ref, start_day)
+        ensure_month_budgets(self.request.user, start, start_day)
+        total = month_total(self.request.user, ref, start_day)
+        budget = budget_total(self.request.user, ref, start_day)
+        previous = month_total(
+            self.request.user, month_shift(ref, -1, start_day), start_day
+        )
         today_total = (
             Expense.objects.for_user(self.request.user)
             .filter(date=today)
@@ -334,7 +353,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             "total": total,
             "budget": budget,
             "left": budget - total,
-            "avg": daily_average(total, ref, today),
+            "avg": daily_average(total, ref, today, start_day),
             "change": pct_change(total, previous),
             "today": today_total,
             "pct": min(100, round(float(total / budget) * 100)) if budget else 0,
@@ -348,7 +367,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             .select_related("category")
         )
         context.update(self._weekly_context(today))
-        context.update(self._donut_context(ref))
+        context.update(self._donut_context(ref, start_day))
         return context
 
     PLOT_PX = 162
@@ -373,8 +392,8 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             }
         }
 
-    def _donut_context(self, ref):
-        segments = category_sums(self.request.user, ref)
+    def _donut_context(self, ref, start_day=1):
+        segments = category_sums(self.request.user, ref, start_day)
         total = sum(s["total"] for s in segments)
         for seg in segments:
             seg["pct"] = round(float(seg["total"] / total) * 100) if total else 0

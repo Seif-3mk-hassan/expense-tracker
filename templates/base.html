@@ -47,7 +47,7 @@
 <header class="top">
   <span class="brand">Xpens</span>
   {% if user.is_authenticated %}
-  <nav class="tabs"><a href="{% url 'home' %}">Home</a><a href="{% url 'expense-list' %}">Expenses</a><a href="{% url 'budget-list' %}">Budgets</a><a href="{% url 'insights' %}">Insights</a></nav>
+  <nav class="tabs"><a href="{% url 'home' %}">Home</a><a href="{% url 'expense-list' %}">Expenses</a><a href="{% url 'budget-list' %}">Budgets</a><a href="{% url 'insights' %}">Insights</a><a href="{% url 'settings' %}">Settings</a></nav>
   <form class="tsearch" method="get" action="{% url 'expense-list' %}"><input name="q" placeholder="Search expenses…" value="{{ q|default:'' }}"></form>
   <form method="get" action=""><select class="tmonth" name="month" onchange="this.form.submit()">
     <option value="">This month</option>

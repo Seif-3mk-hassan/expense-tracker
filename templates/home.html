@@ -59,7 +59,7 @@
 <div class="page">
   <section class="hero">
     <div><small>Total spent · {{ hero.month_label }}</small>
-    <div class="num">{{ hero.total|floatformat:0 }} EGP</div>
+    <div class="num">{{ hero.total|floatformat:0 }} {{ currency }}</div>
     <div class="cap">{{ hero.budget|floatformat:0 }} budget · {{ hero.left|floatformat:0 }} left</div>
     <div class="htrack"><i style="width:{{ hero.pct }}%"></i></div></div>
     <div class="hstat">
@@ -76,7 +76,7 @@
       <div class="chart">
         <div class="avg" style="bottom:{{ weekly.avg_bottom_px }}px" title="Daily average"><em>avg {{ weekly.avg|floatformat:0 }}</em></div>
         {% for d in weekly.days %}
-        <div class="col{% if d.is_today %} today{% endif %}{% if d.is_peak %} max{% endif %}" title="{{ d.date }} — {{ d.total|floatformat:0 }} EGP"><b>{{ d.total|floatformat:0 }}</b><i style="height:{{ d.px }}px"></i><span>{{ d.label }}</span></div>
+        <div class="col{% if d.is_today %} today{% endif %}{% if d.is_peak %} max{% endif %}" title="{{ d.date }} — {{ d.total|floatformat:0 }} {{ currency }}"><b>{{ d.total|floatformat:0 }}</b><i style="height:{{ d.px }}px"></i><span>{{ d.label }}</span></div>
         {% endfor %}
       </div>
     </section>
@@ -84,7 +84,7 @@
       <h2>Where it goes</h2>
       <div class="hint">{{ hero.month_label }}</div>
       <div class="donut-row">
-        <div class="donut" style="background:{{ donut.style }}"><div><b>{{ donut.total|floatformat:0 }}</b><span>EGP</span></div></div>
+        <div class="donut" style="background:{{ donut.style }}"><div><b>{{ donut.total|floatformat:0 }}</b><span>{{ currency }}</span></div></div>
         <div class="legend">
           {% for s in donut.segments %}
           <div><span class="dot" style="background:{{ s.color }}"></span>{{ s.name }}<em>{{ s.pct }}%</em></div>
@@ -103,7 +103,7 @@
       <table>
         <tr><th>Note</th><th>Category</th><th>Date</th><th style="text-align:right">Amount</th></tr>
         {% for e in recent %}
-        <tr><td>{{ e.note|default:"—" }}</td><td>{{ e.category }}</td><td>{{ e.date }}</td><td class="r">{{ e.amount|floatformat:0 }} EGP</td></tr>
+        <tr><td>{{ e.note|default:"—" }}</td><td>{{ e.category }}</td><td>{{ e.date }}</td><td class="r">{{ e.amount|floatformat:0 }} {{ currency }}</td></tr>
         {% empty %}
         <tr><td colspan="4" style="color:var(--muted)">Nothing here yet.</td></tr>
         {% endfor %}
