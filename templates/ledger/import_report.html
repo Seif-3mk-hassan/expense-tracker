@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Import report — Xpens{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Import report</h1>
+  <p class="sub">{{ imported }} imported · {{ rejected|length }} rejected.</p>
+  {% if rejected %}
+  <table style="width:100%;font-size:13.5px">
+    <tr><th style="text-align:left">Row</th><th style="text-align:left">Reason</th></tr>
+    {% for index, reason in rejected %}
+    <tr><td>{{ index }}</td><td>{{ reason }}</td></tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="sub">Every row imported cleanly.</p>
+  {% endif %}
+  <p class="alt"><a href="{% url 'expense-list' %}">Back to expenses</a></p>
+</div>
+{% endblock %}

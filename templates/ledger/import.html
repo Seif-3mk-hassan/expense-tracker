@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Import — Xpens{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Import expenses</h1>
+  <p class="sub">Upload a JSON file in the Xpens export shape. Every row is checked first: valid rows import, bad rows are listed with reasons.</p>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="btn" type="submit">Validate and import</button>
+  </form>
+</div>
+{% endblock %}

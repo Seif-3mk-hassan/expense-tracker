@@ -734,3 +734,100 @@ class JsonExportTests(TestCase):
         self.assertEqual(
             self.client.get(reverse("expense-export")).status_code, 302
         )
+
+
+class JsonImportTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user("importer")
+        self.client.force_login(self.user)
+
+    def _upload(self, content, name="data.json"):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        if isinstance(content, str):
+            content = content.encode()
+        return self.client.post(
+            reverse("expense-import"),
+            {"file": SimpleUploadedFile(name, content)},
+        )
+
+    def test_valid_file_imports(self):
+        import json
+
+        payload = {
+            "exported": "2026-09-08T00:00:00",
+            "currency": "EGP",
+            "expenses": [
+                {
+                    "description": "Lunch",
+                    "category": "Food",
+                    "date": "2026-09-07",
+                    "payment": "cash",
+                    "amount": "180.00",
+                }
+            ],
+        }
+        response = self._upload(json.dumps(payload))
+        self.assertContains(response, "1 imported")
+        self.assertEqual(Expense.objects.for_user(self.user).count(), 1)
+
+    def test_malformed_file_imports_nothing(self):
+        response = self._upload("{not json")
+        self.assertContains(response, "not valid JSON")
+        self.assertEqual(Expense.objects.for_user(self.user).count(), 0)
+
+    def test_mixed_rows_report_reasons(self):
+        import json
+
+        payload = {
+            "expenses": [
+                {
+                    "description": "Good",
+                    "category": "Food",
+                    "date": "2026-09-07",
+                    "payment": "cash",
+                    "amount": "10",
+                },
+                {
+                    "description": "Bad amount",
+                    "category": "Food",
+                    "date": "2026-09-07",
+                    "payment": "cash",
+                    "amount": "0",
+                },
+                {
+                    "description": "Bad category",
+                    "category": "Nope",
+                    "date": "2026-09-07",
+                    "payment": "cash",
+                    "amount": "5",
+                },
+                {
+                    "description": "Bad date",
+                    "category": "Food",
+                    "date": "yesterday",
+                    "payment": "cash",
+                    "amount": "5",
+                },
+            ]
+        }
+        response = self._upload(json.dumps(payload))
+        self.assertContains(response, "1 imported")
+        self.assertContains(response, "3 rejected")
+        self.assertContains(response, "Bad amount")
+        self.assertContains(response, "Unknown category")
+        self.assertContains(response, "Bad date")
+        self.assertEqual(Expense.objects.for_user(self.user).count(), 1)
+
+    def test_unknown_shape_imports_nothing(self):
+        import json
+
+        response = self._upload(json.dumps([1, 2, 3]))
+        self.assertContains(response, "expenses")
+        self.assertEqual(Expense.objects.for_user(self.user).count(), 0)
+
+    def test_import_requires_login(self):
+        self.client.logout()
+        self.assertEqual(
+            self.client.get(reverse("expense-import")).status_code, 302
+        )

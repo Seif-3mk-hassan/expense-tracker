@@ -1,5 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import transaction
 from django.db.models import Q, Sum
 from django.http import JsonResponse
 from django.shortcuts import render
@@ -9,6 +10,7 @@ from django.views import View
 from django.views.generic import (
     CreateView,
     DeleteView,
+    FormView,
     ListView,
     TemplateView,
     UpdateView,
@@ -26,7 +28,8 @@ from .analytics import (
     pct_change,
 )
 from .budgets import ensure_month_budgets, month_bounds, month_start
-from .forms import ExpenseForm
+from .forms import ExpenseForm, ImportForm
+from .importing import validate_import_rows
 from .models import Budget, Category, Expense
 
 
@@ -248,6 +251,40 @@ class JsonExportView(LoginRequiredMixin, View):
             "attachment; filename=expenses-export.json"
         )
         return response
+
+
+class JsonImportView(LoginRequiredMixin, FormView):
+    """Upload a JSON export; report imported vs rejected rows (US-17)."""
+
+    form_class = ImportForm
+    template_name = "ledger/import.html"
+
+    def form_valid(self, form):
+        import json
+
+        raw = form.cleaned_data["file"].read()
+        try:
+            data = json.loads(raw)
+        except (ValueError, UnicodeDecodeError):
+            form.add_error(None, "That file is not valid JSON. Nothing imported.")
+            return self.form_invalid(form)
+        records = data.get("expenses") if isinstance(data, dict) else None
+        if not isinstance(records, list):
+            form.add_error(
+                None, 'Want an object with an "expenses" list. Nothing imported.'
+            )
+            return self.form_invalid(form)
+        clean, rejected = validate_import_rows(self.request.user, records)
+        with transaction.atomic():
+            Expense.objects.bulk_create(clean)
+        return render(
+            self.request,
+            "ledger/import_report.html",
+            {
+                "imported": len(clean),
+                "rejected": rejected,
+            },
+        )
 
 
 class DashboardView(LoginRequiredMixin, TemplateView):
