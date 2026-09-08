@@ -20,6 +20,10 @@
   .top button{background:none;border:1px solid var(--line);color:var(--ink);border-radius:10px;
     padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
   .top button:hover{border-color:var(--mint)}
+  .tsearch input{width:200px;padding:9px 13px;border:1px solid var(--line);border-radius:12px;
+    font-size:13.5px;font-family:inherit;background:var(--card);color:var(--ink)}
+  .tmonth{padding:9px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card);
+    color:var(--ink);font-size:13.5px;font-weight:600;font-family:inherit;cursor:pointer}
   .wrap{max-width:520px;margin:0 auto;padding:48px 20px}
   .card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:28px}
   .card h1{font-size:22px;margin-bottom:6px}
@@ -44,6 +48,11 @@
   <span class="brand">Xpens</span>
   {% if user.is_authenticated %}
   <nav class="tabs"><a href="{% url 'home' %}">Home</a><a href="{% url 'expense-list' %}">Expenses</a><a href="{% url 'budget-list' %}">Budgets</a></nav>
+  <form class="tsearch" method="get" action="{% url 'expense-list' %}"><input name="q" placeholder="Search expenses…" value="{{ q|default:'' }}"></form>
+  <form method="get" action=""><select class="tmonth" name="month" onchange="this.form.submit()">
+    <option value="">This month</option>
+    {% for m in month_options %}<option value="{{ m|date:'Y-m' }}"{% if m|date:'Y-m' == active_month %} selected{% endif %}>{{ m|date:'F Y' }}</option>{% endfor %}
+  </select></form>
   {% endif %}
   <span class="sp"></span>
   {% if user.is_authenticated %}

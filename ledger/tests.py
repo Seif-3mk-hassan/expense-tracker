@@ -588,3 +588,48 @@ class DashboardRecentTests(TestCase):
     def test_modal_param_opens_add_modal(self):
         response = self.client.get(reverse("expense-list") + "?modal=1")
         self.assertContains(response, 'class="ov open"')
+
+
+class MonthContextTests(TestCase):
+    def setUp(self):
+        from datetime import date
+
+        from .analytics import month_shift
+
+        self.user = User.objects.create_user("timer")
+        self.today = date.today()
+        self.prev = month_shift(self.today, -1)
+        self.food = Category.objects.for_user(self.user).get(name="Food")
+        Expense.objects.create(
+            owner=self.user, amount=500, date=self.prev.replace(day=5),
+            category=self.food,
+        )
+        self.client.force_login(self.user)
+
+    def test_topbar_has_search_and_month_picker(self):
+        response = self.client.get(reverse("home"))
+        self.assertContains(response, 'name="q"')
+        self.assertContains(response, 'name="month"')
+        self.assertContains(response, self.prev.strftime("%B %Y"))
+
+    def test_budgets_page_honors_month_param(self):
+        from .budgets import ensure_month_budgets
+
+        ensure_month_budgets(self.user, self.prev.replace(day=1))
+        response = self.client.get(
+            reverse("budget-list") + f"?month={self.prev:%Y-%m}"
+        )
+        self.assertContains(response, self.prev.strftime("%B %Y"))
+        budgets = list(response.context["budgets"])
+        self.assertTrue(budgets)
+        self.assertTrue(
+            all(b.month.month == self.prev.month for b in budgets)
+        )
+
+    def test_invalid_month_param_falls_back_to_current(self):
+        response = self.client.get(reverse("home") + "?month=nope")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.context["hero"]["month_label"],
+            self.today.strftime("%B %Y"),
+        )

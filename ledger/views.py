@@ -151,14 +151,22 @@ class BudgetListView(LoginRequiredMixin, ListView):
     template_name = "ledger/budget_list.html"
     context_object_name = "budgets"
 
+    def get_month(self):
+        return month_start(parse_month_param(self.request.GET) or timezone.now().date())
+
     def get_queryset(self):
-        month = month_start(timezone.now().date())
+        month = self.get_month()
         ensure_month_budgets(self.request.user, month)
         return (
             Budget.objects.for_user(self.request.user)
             .filter(month=month)
             .select_related("category")
         )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["month_label"] = self.get_month().strftime("%B %Y")
+        return context
 
 
 class BudgetUpdateView(LoginRequiredMixin, UpdateView):
