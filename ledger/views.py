@@ -1,14 +1,39 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.utils import timezone
-from django.views.generic import CreateView, DeleteView, ListView, UpdateView
+from django.views.generic import (
+    CreateView,
+    DeleteView,
+    ListView,
+    TemplateView,
+    UpdateView,
+)
 
-from .budgets import ensure_month_budgets, month_start
+from .analytics import (
+    budget_total,
+    daily_average,
+    month_shift,
+    month_total,
+    pct_change,
+)
+from .budgets import ensure_month_budgets, month_bounds, month_start
 from .forms import ExpenseForm
 from .models import Budget, Category, Expense
+
+
+def parse_month_param(params):
+    """YYYY-MM from ?month=, else None (defaults to the current month)."""
+    from datetime import date
+
+    raw = params.get("month", "").strip()
+    try:
+        year, month = raw.split("-")
+        return date(int(year), int(month), 1)
+    except (ValueError, AttributeError):
+        return None
 
 
 @login_required
@@ -143,3 +168,37 @@ class BudgetUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_queryset(self):
         return Budget.objects.for_user(self.request.user)
+
+
+class DashboardView(LoginRequiredMixin, TemplateView):
+    """Landing page: KPI hero now (US-11), charts and tables follow in S4."""
+
+    template_name = "home.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        today = timezone.now().date()
+        ref = parse_month_param(self.request.GET) or today
+        start, _ = month_bounds(ref)
+        ensure_month_budgets(self.request.user, start)
+        total = month_total(self.request.user, ref)
+        budget = budget_total(self.request.user, ref)
+        previous = month_total(self.request.user, month_shift(ref, -1))
+        today_total = (
+            Expense.objects.for_user(self.request.user)
+            .filter(date=today)
+            .aggregate(total=Sum("amount"))["total"]
+            or 0
+        )
+        context["hero"] = {
+            "total": total,
+            "budget": budget,
+            "left": budget - total,
+            "avg": daily_average(total, ref, today),
+            "change": pct_change(total, previous),
+            "today": today_total,
+            "pct": min(100, round(float(total / budget) * 100)) if budget else 0,
+            "month_label": ref.strftime("%B %Y"),
+        }
+        context["ref_month"] = ref.strftime("%Y-%m")
+        return context

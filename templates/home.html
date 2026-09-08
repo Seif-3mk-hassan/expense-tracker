@@ -1,9 +1,72 @@
 {% extends "base.html" %}
-{% block title %}Home — Xpens{% endblock %}
+{% block title %}Dashboard — Xpens{% endblock %}
+{% block extra_css %}
+  .page{max-width:1080px;margin:0 auto;padding:28px 20px 60px}
+  .hero{background:var(--grad);border-radius:22px;padding:26px 28px;color:#0B0E14;
+    margin-bottom:14px;display:flex;align-items:center;gap:30px;flex-wrap:wrap}
+  .hero>div:first-child{flex:1;min-width:230px}
+  .hero small{font-size:12px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;opacity:.65}
+  .hero .num{font-size:50px;font-weight:800;letter-spacing:-2px;line-height:1.1}
+  .hero .cap{font-size:13px;font-weight:600;opacity:.75;margin-top:4px}
+  .htrack{height:8px;background:rgba(11,14,20,.18);border-radius:99px;overflow:hidden;margin-top:12px}
+  .htrack i{display:block;height:100%;background:#0B0E14;border-radius:99px;opacity:.85}
+  .hstat{margin-left:auto;display:flex;gap:34px}
+  .hstat b{display:block;font-size:22px}
+  .hstat span{font-size:12px;font-weight:600;opacity:.7}
+  .grid{display:grid;grid-template-columns:1.5fr 1fr;gap:14px;margin-bottom:14px}
+  @media(max-width:1000px){.grid{grid-template-columns:1fr}}
+  .card2{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px}
+  .card2 h2{font-size:15px}
+  .hint{font-size:12.5px;color:var(--muted);margin:3px 0 14px}
+  .head{display:flex;justify-content:space-between;align-items:center}
+  .head a{font-size:13px;color:var(--muted);text-decoration:none}
+  .head a:hover{color:var(--mint)}
+  .chart{position:relative;display:flex;align-items:flex-end;gap:14px;height:220px;padding-top:34px}
+  .chart::before{content:"";position:absolute;left:0;right:0;top:34px;bottom:24px;
+    background:repeating-linear-gradient(to top,rgba(255,255,255,.06) 0 1px,transparent 1px 44px);
+    border-bottom:1px solid var(--line)}
+  .avg{position:absolute;left:0;right:0;border-top:2px dashed rgba(94,234,212,.5);z-index:2}
+  .avg em{position:absolute;right:0;top:-21px;font-style:normal;font-size:10.5px;color:var(--mint);font-weight:700}
+  .col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+    height:100%;position:relative;z-index:1}
+  .col b{font-size:11.5px;margin-bottom:7px}
+  .col.today b{color:var(--mint)}
+  .col i{width:100%;max-width:38px;border-radius:10px;background:var(--grad);display:block}
+  .col.max i{box-shadow:0 0 26px rgba(167,139,250,.5)}
+  .col.today i{outline:2px solid var(--mint);outline-offset:2px}
+  .col span{font-size:11px;color:var(--muted);height:24px;display:flex;align-items:center}
+  .donut-row{display:flex;align-items:center;gap:20px}
+  .donut{width:130px;height:130px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center}
+  .donut div{width:88px;height:88px;border-radius:50%;background:var(--card);
+    display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .donut b{font-size:18px}
+  .donut span{font-size:10px;color:var(--muted)}
+  .legend{flex:1;display:flex;flex-direction:column;gap:10px;font-size:13.5px}
+  .legend div{display:flex;align-items:center;gap:9px}
+  .dot{width:10px;height:10px;border-radius:50%;flex:none}
+  .legend em{margin-left:auto;font-style:normal;color:var(--muted);font-weight:600}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th{text-align:left;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;padding:10px}
+  td{padding:13px 10px;border-top:1px solid var(--line)}
+  td.r,th.r{text-align:right}
+  .bud{margin-bottom:13px}
+  .bud .row{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px}
+  .pbar{height:9px;background:#242C44;border-radius:99px;overflow:hidden}
+  .pbar i{display:block;height:100%;border-radius:99px;background:var(--grad)}
+  .pbar i.warn{background:linear-gradient(135deg,#FBBF24,#FB7185)}
+{% endblock %}
 {% block content %}
-<div class="card">
-  <h1>Welcome, {{ user.username }}</h1>
-  <p class="sub">Foundation is live. Your dashboard arrives in Sprint 4.</p>
-  <p class="sub"><a href="{% url 'expense-list' %}" style="color:var(--mint)">Expenses</a> · <a href="/admin/" style="color:var(--mint)">Admin</a></p>
+<div class="page">
+  <section class="hero">
+    <div><small>Total spent · {{ hero.month_label }}</small>
+    <div class="num">{{ hero.total|floatformat:0 }} EGP</div>
+    <div class="cap">{{ hero.budget|floatformat:0 }} budget · {{ hero.left|floatformat:0 }} left</div>
+    <div class="htrack"><i style="width:{{ hero.pct }}%"></i></div></div>
+    <div class="hstat">
+      <div><b>{{ hero.today|floatformat:0 }}</b><span>Today</span></div>
+      <div><b>{{ hero.avg|floatformat:0 }}</b><span>Daily avg</span></div>
+      <div><b>{% if hero.change is None %}new{% else %}{{ hero.change }}%{% endif %}</b><span>vs last month</span></div>
+    </div>
+  </section>
 </div>
 {% endblock %}

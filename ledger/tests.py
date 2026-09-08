@@ -445,3 +445,59 @@ class BudgetUpdateTests(TestCase):
         self.assertEqual(
             self.client.post(url, {"limit": "1"}).status_code, 404
         )
+
+
+class DashboardHeroTests(TestCase):
+    def setUp(self):
+        from datetime import date
+
+        from .analytics import month_shift
+
+        self.user = User.objects.create_user("dash")
+        self.other = User.objects.create_user("stranger")
+        self.today = date.today()
+        self.food = Category.objects.for_user(self.user).get(name="Food")
+        Expense.objects.create(
+            owner=self.user, amount=300, date=self.today, category=self.food
+        )
+        prev = month_shift(self.today, -1).replace(day=5)
+        Expense.objects.create(
+            owner=self.user, amount=100, date=prev, category=self.food
+        )
+        other_food = Category.objects.for_user(self.other).get(name="Food")
+        Expense.objects.create(
+            owner=self.other, amount=9999, date=self.today, category=other_food
+        )
+        self.client.force_login(self.user)
+
+    def test_hero_math(self):
+        hero = self.client.get(reverse("home")).context["hero"]
+        self.assertEqual(hero["total"], Decimal("300.00"))
+        self.assertEqual(hero["budget"], Decimal("14500.00"))
+        self.assertEqual(hero["left"], Decimal("14200.00"))
+        self.assertEqual(
+            hero["avg"], round(Decimal("300") / self.today.day, 2)
+        )
+        self.assertEqual(hero["change"], 200)
+        self.assertEqual(hero["today"], Decimal("300.00"))
+
+    def test_empty_month_shows_zeros_and_new(self):
+        Expense.objects.for_user(self.user).delete()
+        hero = self.client.get(reverse("home")).context["hero"]
+        self.assertEqual(hero["total"], Decimal("0"))
+        self.assertIsNone(hero["change"])
+        response = self.client.get(reverse("home"))
+        self.assertContains(response, "new")
+
+    def test_month_param_switches_context(self):
+        from .analytics import month_shift
+
+        prev = month_shift(self.today, -1)
+        hero = self.client.get(
+            reverse("home") + f"?month={prev:%Y-%m}"
+        ).context["hero"]
+        self.assertEqual(hero["total"], Decimal("100.00"))
+
+    def test_dashboard_requires_login(self):
+        self.client.logout()
+        self.assertEqual(self.client.get(reverse("home")).status_code, 302)
