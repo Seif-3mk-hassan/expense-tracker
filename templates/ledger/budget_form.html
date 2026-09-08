@@ -1,8 +1,9 @@
 {% extends "base.html" %}
+{% load icons %}
 {% block title %}Edit budget — Xpens{% endblock %}
 {% block content %}
 <div class="card">
-  <h1>{{ object.category.icon }} {{ object.category.name }} · {{ object.month|date:"F Y" }}</h1>
+  <h1>{{ object.category|category_icon }} {{ object.category.name }} · {{ object.month|date:"F Y" }}</h1>
   <p class="sub">Used {{ object.used|floatformat:0 }} so far. Only the limit is editable.</p>
   <form method="post">
     {% csrf_token %}

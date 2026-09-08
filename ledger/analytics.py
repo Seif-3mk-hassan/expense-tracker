@@ -103,17 +103,27 @@ def category_sums(user, ref, start_day=1):
     ]
 
 
-def donut_style(segments, total):
-    """CSS conic-gradient for the category donut (US-12)."""
+def donut_style(segments, total, gap_color="#141926", gap_pct=Decimal("1.0")):
+    """CSS conic-gradient for the category donut (US-12).
+
+    A thin gap of the card color sits between segments so a 1% slice
+    stays distinguishable next to a dominant one.
+    """
     if not total:
         return "conic-gradient(#2A3350 0 100%)"
-    parts, running = [], Decimal("0")
-    for seg in segments:
-        start_pct = running / total * 100
+    stops = []
+    running = Decimal("0")
+    items = list(segments)
+    for index, seg in enumerate(items):
+        start = running / total * 100
         running += seg["total"]
-        end_pct = running / total * 100
-        parts.append(f"{seg['color']} {start_pct:.1f}% {end_pct:.1f}%")
-    return "conic-gradient(" + ", ".join(parts) + ")"
+        end = running / total * 100
+        last = index == len(items) - 1
+        edge = end if last else max(start, end - gap_pct)
+        stops.append(f"{seg['color']} {start:.1f}% {edge:.1f}%")
+        if not last:
+            stops.append(f"{gap_color} {edge:.1f}% {end:.1f}%")
+    return "conic-gradient(" + ", ".join(stops) + ")"
 
 
 def last_6_months(user, ref, start_day=1):

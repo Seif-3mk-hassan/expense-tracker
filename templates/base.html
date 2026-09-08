@@ -43,7 +43,10 @@
   .tabs a{color:var(--muted);text-decoration:none;font-size:13.5px;font-weight:600;padding:8px 12px;border-radius:10px;white-space:nowrap}
   .tabs a:hover{color:var(--ink);background:rgba(255,255,255,.05)}
   .tscroll{overflow-x:auto}
-  .tscroll table{min-width:640px}
+  .tscroll th:nth-child(n+3),.tscroll td:nth-child(n+3){white-space:nowrap}
+  tbody tr:nth-child(even) td{background:rgba(255,255,255,.03)}
+  .page{max-width:1080px;margin:0 auto;padding:28px 20px 60px}
+  .cicon{display:inline-flex;vertical-align:-3px;margin-right:3px}
   @media(max-width:900px){
     .tsearch{display:none}
     .tabs{margin-left:0;order:3;flex-basis:100%}

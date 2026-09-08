@@ -487,7 +487,7 @@ class DashboardHeroTests(TestCase):
         self.assertEqual(hero["total"], Decimal("0"))
         self.assertIsNone(hero["change"])
         response = self.client.get(reverse("home"))
-        self.assertContains(response, "new")
+        self.assertContains(response, "No data yet")
 
     def test_month_param_switches_context(self):
         from .analytics import month_shift
@@ -897,6 +897,44 @@ class EmptyAndErrorStatesTests(TestCase):
             response = self.client.get("/no-such-page/")
         self.assertEqual(response.status_code, 404)
         self.assertTemplateUsed(response, "404.html")
+
+
+class UiPolishTests(TestCase):
+    """ET-35 regression tripwires for the dashboard/expenses polish batch."""
+
+    def setUp(self):
+        self.user = User.objects.create_user("polish")
+        self.client.force_login(self.user)
+
+    def test_trend_fallback_says_no_data_yet(self):
+        response = self.client.get(reverse("home"))
+        self.assertContains(response, "No data yet")
+
+    def test_donut_has_gaps_between_segments(self):
+        from datetime import date
+
+        food = Category.objects.for_user(self.user).get(name="Food")
+        fun = Category.objects.for_user(self.user).get(name="Fun")
+        Expense.objects.create(
+            owner=self.user, amount=9900, date=date.today(), category=food
+        )
+        Expense.objects.create(
+            owner=self.user, amount=100, date=date.today(), category=fun
+        )
+        content = self.client.get(reverse("home")).content.decode()
+        self.assertIn("#141926", content)
+
+    def test_category_icons_are_svg_not_emoji(self):
+        from ledger.templatetags.icons import category_icon
+
+        food = Category.objects.for_user(self.user).get(name="Food")
+        svg = category_icon(food)
+        self.assertIn("<svg", svg)
+        self.assertIn('stroke="#5EEAD4"', svg)
+        self.assertEqual(str(food), "Food")
+        content = self.client.get(reverse("budget-list")).content.decode()
+        self.assertIn("<svg", content)
+        self.assertNotIn("🍔", content)
 
 
 class ResponsiveLayoutTests(TestCase):

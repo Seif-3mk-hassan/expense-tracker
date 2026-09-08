@@ -1,7 +1,7 @@
 {% extends "base.html" %}
+{% load icons %}
 {% block title %}Expenses — Xpens{% endblock %}
 {% block extra_css %}
-  .page{max-width:960px;margin:0 auto;padding:28px 20px 60px}
   .row{display:flex;align-items:center;gap:12px;margin-bottom:18px}
   .row h1{font-size:22px;flex:1}
   .filters{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
@@ -54,18 +54,19 @@
   <div class="tscroll">
   <table>
     <tr><th>Note</th><th>Category</th><th>Date</th><th>Payment</th><th class="r">Amount</th><th></th></tr>
+    <tbody>
     {% for e in expenses %}
     <tr>
       <td>{{ e.note|default:"—" }}</td>
-      <td>{{ e.category }}</td>
+      <td>{{ e.category|category_icon }} {{ e.category.name }}</td>
       <td>{{ e.date }}</td>
       <td>{{ e.get_payment_display }}</td>
       <td class="r">{{ e.amount }} {{ currency }}</td>
       <td class="r"><a href="{% url 'expense-edit' e.pk %}">Edit</a><a href="{% url 'expense-delete' e.pk %}">Delete</a></td>
     </tr>
     {% endfor %}
+    </tbody>
   </table>
-  </div>
   {% else %}
   {% if is_filtered %}
   <div class="empty">No expenses match your filters.</div>

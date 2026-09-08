@@ -1,7 +1,7 @@
 {% extends "base.html" %}
+{% load icons %}
 {% block title %}Budgets — Xpens{% endblock %}
 {% block extra_css %}
-  .page{max-width:960px;margin:0 auto;padding:28px 20px 60px}
   .page h1{font-size:22px;margin-bottom:18px}
   .bgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
   @media(max-width:860px){.bgrid{grid-template-columns:1fr}}
@@ -24,7 +24,7 @@
   <div class="bgrid">
     {% for b in budgets %}
     <section class="bcard">
-      <h2>{{ b.category.icon }} {{ b.category.name }}</h2>
+      <h2>{{ b.category|category_icon }} {{ b.category.name }}</h2>
       <div class="big">{{ b.used|floatformat:0 }} / {{ b.limit|floatformat:0 }}</div>
       {% include "ledger/_budget_bar.html" with b=b %}
       <div class="foot">

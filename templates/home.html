@@ -1,7 +1,7 @@
 {% extends "base.html" %}
+{% load icons %}
 {% block title %}Dashboard — Xpens{% endblock %}
 {% block extra_css %}
-  .page{max-width:1080px;margin:0 auto;padding:28px 20px 60px}
   .hero{background:var(--grad);border-radius:22px;padding:26px 28px;color:#0B0E14;
     margin-bottom:14px;display:flex;align-items:center;gap:30px;flex-wrap:wrap}
   .hero>div:first-child{flex:1;min-width:230px}
@@ -21,20 +21,21 @@
   .head{display:flex;justify-content:space-between;align-items:center}
   .head a{font-size:13px;color:var(--muted);text-decoration:none}
   .head a:hover{color:var(--mint)}
-  .chart{position:relative;display:flex;align-items:flex-end;gap:14px;height:220px;padding-top:34px}
+  .chart{position:relative;display:flex;align-items:flex-end;gap:14px;min-height:220px;padding-top:34px;overflow:visible}
   .chart::before{content:"";position:absolute;left:0;right:0;top:34px;bottom:24px;
     background:repeating-linear-gradient(to top,rgba(255,255,255,.06) 0 1px,transparent 1px 44px);
     border-bottom:1px solid var(--line)}
   .avg{position:absolute;left:0;right:0;border-top:2px dashed rgba(94,234,212,.5);z-index:2}
   .avg em{position:absolute;right:0;top:-21px;font-style:normal;font-size:10.5px;color:var(--mint);font-weight:700}
   .col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
-    height:100%;position:relative;z-index:1}
+    position:relative;z-index:1}
   .col b{font-size:11.5px;margin-bottom:7px}
   .col.today b{color:var(--mint)}
-  .col i{width:100%;max-width:38px;border-radius:10px;background:var(--grad);display:block}
+  .col i{width:100%;max-width:38px;border-radius:10px;background:var(--grad);display:block;min-height:3px}
   .col.max i{box-shadow:0 0 26px rgba(167,139,250,.5)}
   .col.today i{outline:2px solid var(--mint);outline-offset:2px}
-  .col span{font-size:11px;color:var(--muted);height:24px;display:flex;align-items:center}
+  .col span{font-size:10.5px;color:var(--muted);height:24px;display:flex;align-items:center;
+    justify-content:center;overflow:visible;white-space:nowrap}
   .donut-row{display:flex;align-items:center;gap:20px}
   .donut{width:130px;height:130px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center}
   .donut div{width:88px;height:88px;border-radius:50%;background:var(--card);
@@ -72,7 +73,7 @@
     <div class="hstat">
       <div><b>{{ hero.today|floatformat:0 }}</b><span>Today</span></div>
       <div><b>{{ hero.avg|floatformat:0 }}</b><span>Daily avg</span></div>
-      <div><b>{% if hero.change is None %}new{% else %}{{ hero.change }}%{% endif %}</b><span>vs last month</span></div>
+      <div><b>{% if hero.change is None %}No data yet{% else %}{{ hero.change }}%{% endif %}</b><span>vs last month</span></div>
     </div>
   </section>
 
@@ -110,11 +111,13 @@
       <div class="tscroll">
       <table>
         <tr><th>Note</th><th>Category</th><th>Date</th><th style="text-align:right">Amount</th></tr>
+        <tbody>
         {% for e in recent %}
-        <tr><td>{{ e.note|default:"—" }}</td><td>{{ e.category }}</td><td>{{ e.date }}</td><td class="r">{{ e.amount|floatformat:0 }} {{ currency }}</td></tr>
+        <tr><td>{{ e.note|default:"—" }}</td><td>{{ e.category|category_icon }} {{ e.category.name }}</td><td>{{ e.date }}</td><td class="r">{{ e.amount|floatformat:0 }} {{ currency }}</td></tr>
         {% empty %}
         <tr><td colspan="4" style="color:var(--muted)">Nothing here yet.</td></tr>
         {% endfor %}
+        </tbody>
       </table>
       </div>
     </section>
