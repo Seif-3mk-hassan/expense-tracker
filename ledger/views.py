@@ -184,7 +184,8 @@ class BudgetUpdateView(LoginRequiredMixin, UpdateView):
         return Budget.objects.for_user(self.request.user)
 
 
-class InsightsView(LoginRequiredMixin, TemplateView):    """Six-month trends plus budget pressure and one auto tip (US-15)."""
+class InsightsView(LoginRequiredMixin, TemplateView):
+    """Six-month trends plus budget pressure and one auto tip (US-15)."""
 
     template_name = "ledger/insights.html"
 
