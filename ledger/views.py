@@ -2,7 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
 from django.db.models import Q, Sum
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.utils import timezone
@@ -250,6 +250,29 @@ class JsonExportView(LoginRequiredMixin, View):
         response["Content-Disposition"] = (
             "attachment; filename=expenses-export.json"
         )
+        return response
+
+
+class CsvExportView(LoginRequiredMixin, View):
+    """Same dataset as CSV for spreadsheets (US-18)."""
+
+    def get(self, request):
+        import csv
+
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = (
+            "attachment; filename=expenses-export.csv"
+        )
+        writer = csv.writer(response)
+        writer.writerow(["description", "category", "date", "payment", "amount"])
+        for e in (
+            Expense.objects.for_user(request.user)
+            .select_related("category")
+            .order_by("date", "id")
+        ):
+            writer.writerow(
+                [e.note, e.category.name, e.date.isoformat(), e.payment, e.amount]
+            )
         return response
 
 

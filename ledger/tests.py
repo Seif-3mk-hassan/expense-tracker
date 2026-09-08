@@ -831,3 +831,34 @@ class JsonImportTests(TestCase):
         self.assertEqual(
             self.client.get(reverse("expense-import")).status_code, 302
         )
+
+
+class CsvExportTests(TestCase):
+    def test_csv_shape_and_scope(self):
+        from datetime import date
+
+        user = User.objects.create_user("csver")
+        other = User.objects.create_user("stranger")
+        food = Category.objects.for_user(user).get(name="Food")
+        Expense.objects.create(
+            owner=user, amount=180, date=date(2026, 9, 7),
+            category=food, payment="cash", note="Lunch, with comma",
+        )
+        other_food = Category.objects.for_user(other).get(name="Food")
+        Expense.objects.create(
+            owner=other, amount=9999, date=date(2026, 9, 7), category=other_food
+        )
+        self.client.force_login(user)
+        response = self.client.get(reverse("expense-export-csv"))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("text/csv", response["Content-Type"])
+        content = response.content.decode()
+        self.assertIn("description,category,date,payment,amount", content)
+        self.assertIn('"Lunch, with comma",Food,2026-09-07,cash,180.00', content)
+        self.assertNotIn("9999", content)
+
+    def test_csv_requires_login(self):
+        self.client.logout()
+        self.assertEqual(
+            self.client.get(reverse("expense-export-csv")).status_code, 302
+        )
