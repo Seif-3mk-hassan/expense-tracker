@@ -1,9 +1,11 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q, Sum
+from django.http import JsonResponse
 from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.utils import timezone
+from django.views import View
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -182,8 +184,7 @@ class BudgetUpdateView(LoginRequiredMixin, UpdateView):
         return Budget.objects.for_user(self.request.user)
 
 
-class InsightsView(LoginRequiredMixin, TemplateView):
-    """Six-month trends plus budget pressure and one auto tip (US-15)."""
+class InsightsView(LoginRequiredMixin, TemplateView):    """Six-month trends plus budget pressure and one auto tip (US-15)."""
 
     template_name = "ledger/insights.html"
 
@@ -216,6 +217,36 @@ class InsightsView(LoginRequiredMixin, TemplateView):
             }
         )
         return context
+
+
+class JsonExportView(LoginRequiredMixin, View):
+    """Download all own expenses in the prototyped JSON shape (US-16)."""
+
+    def get(self, request):
+        rows = (
+            Expense.objects.for_user(request.user)
+            .select_related("category")
+            .order_by("date", "id")
+        )
+        payload = {
+            "exported": timezone.now().isoformat(),
+            "currency": "EGP",
+            "expenses": [
+                {
+                    "description": e.note,
+                    "category": e.category.name,
+                    "date": e.date.isoformat(),
+                    "payment": e.payment,
+                    "amount": str(e.amount),
+                }
+                for e in rows
+            ],
+        }
+        response = JsonResponse(payload, json_dumps_params={"indent": 2})
+        response["Content-Disposition"] = (
+            "attachment; filename=expenses-export.json"
+        )
+        return response
 
 
 class DashboardView(LoginRequiredMixin, TemplateView):

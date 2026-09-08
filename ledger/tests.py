@@ -686,3 +686,51 @@ class InsightsTests(TestCase):
     def test_login_required(self):
         self.client.logout()
         self.assertEqual(self.client.get(reverse("insights")).status_code, 302)
+
+
+class JsonExportTests(TestCase):
+    def setUp(self):
+        from datetime import date
+
+        self.user = User.objects.create_user("exporter")
+        self.other = User.objects.create_user("stranger")
+        food = Category.objects.for_user(self.user).get(name="Food")
+        Expense.objects.create(
+            owner=self.user, amount=180, date=date(2026, 9, 7),
+            category=food, payment="cash", note="Lunch",
+        )
+        other_food = Category.objects.for_user(self.other).get(name="Food")
+        Expense.objects.create(
+            owner=self.other, amount=9999, date=date(2026, 9, 7),
+            category=other_food, note="Not mine",
+        )
+        self.client.force_login(self.user)
+
+    def test_export_shape_and_download(self):
+        import json
+
+        response = self.client.get(reverse("expense-export"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/json")
+        self.assertIn("attachment", response["Content-Disposition"])
+        payload = json.loads(response.content)
+        self.assertEqual(payload["currency"], "EGP")
+        self.assertIn("exported", payload)
+        self.assertEqual(len(payload["expenses"]), 1)
+        row = payload["expenses"][0]
+        self.assertEqual(
+            row,
+            {
+                "description": "Lunch",
+                "category": "Food",
+                "date": "2026-09-07",
+                "payment": "cash",
+                "amount": "180.00",
+            },
+        )
+
+    def test_export_requires_login(self):
+        self.client.logout()
+        self.assertEqual(
+            self.client.get(reverse("expense-export")).status_code, 302
+        )
