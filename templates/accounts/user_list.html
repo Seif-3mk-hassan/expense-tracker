@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Users — Xpens{% endblock %}
+{% block extra_css %}
+  .page{max-width:960px;margin:0 auto;padding:28px 20px 60px}
+  .page h1{font-size:22px;margin-bottom:4px}
+  .hint{font-size:12.5px;color:var(--muted);margin-bottom:14px}
+  table{width:100%;border-collapse:collapse;font-size:14px;background:var(--card);
+    border:1px solid var(--line);border-radius:18px;overflow:hidden}
+  th{text-align:left;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;padding:12px}
+  td{padding:13px 12px;border-top:1px solid var(--line)}
+  td.r{text-align:right}
+  .pill{display:inline-block;padding:4px 12px;border-radius:99px;font-size:12px;font-weight:700;
+    background:rgba(94,234,212,.12);color:var(--mint)}
+  .pill.off{background:rgba(251,113,133,.12);color:var(--danger)}
+  .btn-s{padding:8px 14px;border:1px solid var(--line);background:none;color:var(--ink);
+    border-radius:10px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit}
+{% endblock %}
+{% block content %}
+<div class="page">
+  <h1>Users</h1>
+  <p class="hint">Standing only. Spending data is never shown here by design.</p>
+  <table>
+    <tr><th>Username</th><th>Groups</th><th>Status</th><th>Joined</th><th></th></tr>
+    {% for u in users %}
+    <tr>
+      <td>{{ u.username }}</td>
+      <td>{% for g in u.groups.all %}{{ g.name }} {% endfor %}</td>
+      <td>{% if u.is_active %}<span class="pill">active</span>{% else %}<span class="pill off">off</span>{% endif %}</td>
+      <td>{{ u.date_joined|date:"Y-m-d" }}</td>
+      <td class="r"><form method="post" action="{% url 'user-toggle' u.pk %}">{% csrf_token %}<button class="btn-s" type="submit">{% if u.is_active %}Deactivate{% else %}Activate{% endif %}</button></form></td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

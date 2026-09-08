@@ -1,8 +1,10 @@
-from django.contrib.auth import login
+from django.contrib import messages
+from django.contrib.auth import get_user_model, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import Group
-from django.shortcuts import redirect, render
+from django.http import Http404
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.views.generic import CreateView
 
@@ -51,3 +53,38 @@ def settings(request):
             "role": groups,
         },
     )
+
+
+def _require_staff(request):
+    if not request.user.is_staff:
+        raise Http404
+
+
+@login_required
+def user_list(request):
+    """Staff-only roster. Usernames and standing only, never spending data."""
+
+    _require_staff(request)
+    users = (
+        get_user_model()
+        .objects.order_by("username")
+        .prefetch_related("groups")
+    )
+    return render(request, "accounts/user_list.html", {"users": users})
+
+
+@login_required
+def user_toggle(request, pk):
+    """Activate/deactivate an account. Self and superusers are protected."""
+
+    _require_staff(request)
+    target = get_object_or_404(get_user_model(), pk=pk)
+    if request.method == "POST":
+        if target.pk == request.user.pk or target.is_superuser:
+            messages.error(
+                request, "You cannot deactivate yourself or a superuser."
+            )
+        else:
+            target.is_active = not target.is_active
+            target.save(update_fields=["is_active"])
+    return redirect("user-list")
