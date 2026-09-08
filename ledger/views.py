@@ -14,7 +14,10 @@ from django.views.generic import (
 
 from .analytics import (
     budget_total,
+    category_sums,
     daily_average,
+    donut_style,
+    last_n_days,
     month_shift,
     month_total,
     pct_change,
@@ -201,4 +204,41 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             "month_label": ref.strftime("%B %Y"),
         }
         context["ref_month"] = ref.strftime("%Y-%m")
+        context.update(self._weekly_context(today))
+        context.update(self._donut_context(ref))
         return context
+
+    PLOT_PX = 162
+    LABEL_PX = 24
+
+    def _weekly_context(self, today):
+        days = last_n_days(self.request.user, today)
+        peak = max([d["total"] for d in days] or [0])
+        for day in days:
+            day["px"] = (
+                round(float(day["total"] / peak) * self.PLOT_PX) if peak else 0
+            )
+            day["is_today"] = day["date"] == today
+            day["is_peak"] = peak > 0 and day["total"] == peak
+        average = round(sum(d["total"] for d in days) / len(days), 2)
+        avg_px = round(float(average / peak) * self.PLOT_PX) if peak else 0
+        return {
+            "weekly": {
+                "days": days,
+                "avg": average,
+                "avg_bottom_px": self.LABEL_PX + avg_px,
+            }
+        }
+
+    def _donut_context(self, ref):
+        segments = category_sums(self.request.user, ref)
+        total = sum(s["total"] for s in segments)
+        for seg in segments:
+            seg["pct"] = round(float(seg["total"] / total) * 100) if total else 0
+        return {
+            "donut": {
+                "style": donut_style(segments, total),
+                "segments": segments,
+                "total": total,
+            }
+        }

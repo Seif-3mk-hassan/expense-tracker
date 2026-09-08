@@ -501,3 +501,47 @@ class DashboardHeroTests(TestCase):
     def test_dashboard_requires_login(self):
         self.client.logout()
         self.assertEqual(self.client.get(reverse("home")).status_code, 302)
+
+
+class DashboardChartsTests(TestCase):
+    def setUp(self):
+        from datetime import date, timedelta
+
+        self.user = User.objects.create_user("charts")
+        self.today = date.today()
+        self.food = Category.objects.for_user(self.user).get(name="Food")
+        self.fun = Category.objects.for_user(self.user).get(name="Fun")
+        Expense.objects.create(
+            owner=self.user, amount=940, date=self.today, category=self.food
+        )
+        Expense.objects.create(
+            owner=self.user,
+            amount=310,
+            date=self.today - timedelta(days=2),
+            category=self.fun,
+        )
+        self.client.force_login(self.user)
+
+    def test_weekly_marks_peak_and_today(self):
+        weekly = self.client.get(reverse("home")).context["weekly"]
+        self.assertEqual(len(weekly["days"]), 7)
+        peaks = [d for d in weekly["days"] if d["is_peak"]]
+        self.assertEqual(len(peaks), 1)
+        self.assertEqual(peaks[0]["total"], Decimal("940.00"))
+        today_col = [d for d in weekly["days"] if d["is_today"]]
+        self.assertEqual(len(today_col), 1)
+        self.assertEqual(today_col[0]["px"], 162)
+        self.assertContains(self.client.get(reverse("home")), "avg")
+
+    def test_donut_segments_and_style(self):
+        donut = self.client.get(reverse("home")).context["donut"]
+        self.assertEqual(donut["total"], Decimal("1250.00"))
+        self.assertEqual(donut["segments"][0]["name"], "Food")
+        self.assertIn("#5EEAD4", donut["style"])
+        self.assertIn("conic-gradient", donut["style"])
+
+    def test_empty_month_donut_is_neutral(self):
+        Expense.objects.for_user(self.user).delete()
+        response = self.client.get(reverse("home"))
+        self.assertContains(response, "No spending this month yet.")
+        self.assertContains(response, "conic-gradient(#2A3350 0 100%)", html=False)

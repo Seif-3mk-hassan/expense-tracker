@@ -68,5 +68,32 @@
       <div><b>{% if hero.change is None %}new{% else %}{{ hero.change }}%{% endif %}</b><span>vs last month</span></div>
     </div>
   </section>
+
+  <div class="grid">
+    <section class="card2">
+      <h2>This week</h2>
+      <div class="hint">Last 7 days</div>
+      <div class="chart">
+        <div class="avg" style="bottom:{{ weekly.avg_bottom_px }}px" title="Daily average"><em>avg {{ weekly.avg|floatformat:0 }}</em></div>
+        {% for d in weekly.days %}
+        <div class="col{% if d.is_today %} today{% endif %}{% if d.is_peak %} max{% endif %}" title="{{ d.date }} — {{ d.total|floatformat:0 }} EGP"><b>{{ d.total|floatformat:0 }}</b><i style="height:{{ d.px }}px"></i><span>{{ d.label }}</span></div>
+        {% endfor %}
+      </div>
+    </section>
+    <section class="card2">
+      <h2>Where it goes</h2>
+      <div class="hint">{{ hero.month_label }}</div>
+      <div class="donut-row">
+        <div class="donut" style="background:{{ donut.style }}"><div><b>{{ donut.total|floatformat:0 }}</b><span>EGP</span></div></div>
+        <div class="legend">
+          {% for s in donut.segments %}
+          <div><span class="dot" style="background:{{ s.color }}"></span>{{ s.name }}<em>{{ s.pct }}%</em></div>
+          {% empty %}
+          <div>No spending this month yet.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+  </div>
 </div>
 {% endblock %}
