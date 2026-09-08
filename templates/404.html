@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Not found — Xpens{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Lost?</h1>
+  <p class="sub">This page does not exist or you cannot see it.</p>
+  <p class="alt"><a href="{% url 'home' %}">Back to dashboard</a></p>
+</div>
+{% endblock %}

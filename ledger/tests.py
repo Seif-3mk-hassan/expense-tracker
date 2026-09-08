@@ -864,6 +864,41 @@ class CsvExportTests(TestCase):
         )
 
 
+class EmptyAndErrorStatesTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user("fresh")
+        self.client.force_login(self.user)
+
+    def test_first_run_dashboard_is_empty_but_whole(self):
+        response = self.client.get(reverse("home"))
+        hero = response.context["hero"]
+        self.assertEqual(hero["total"], Decimal("0"))
+        self.assertContains(response, "No spending this month yet.")
+        self.assertContains(response, "Nothing here yet.")
+
+    def test_failed_save_shows_errors(self):
+        food = Category.objects.for_user(self.user).get(name="Food")
+        response = self.client.post(
+            reverse("expense-add"),
+            {
+                "amount": "0",
+                "category": food.pk,
+                "date": "2026-09-07",
+                "payment": "cash",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "greater than")
+
+    def test_themed_404(self):
+        from django.test import override_settings
+
+        with override_settings(DEBUG=False, ALLOWED_HOSTS=["testserver"]):
+            response = self.client.get("/no-such-page/")
+        self.assertEqual(response.status_code, 404)
+        self.assertTemplateUsed(response, "404.html")
+
+
 class PreferencesTests(TestCase):
     def setUp(self):
         from datetime import date
