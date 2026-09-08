@@ -9,13 +9,20 @@
     border-radius:12px;padding:10px 14px;font-size:14px;font-family:inherit;color:var(--ink)}
   .filters select{background:var(--card);border:1px solid var(--line);border-radius:12px;
     padding:10px 14px;font-size:14px;font-weight:600;font-family:inherit;color:var(--ink);cursor:pointer}
-  .filters{display:flex;gap:10px;margin-bottom:14px}
-  .filters input,.filters select{background:var(--card);border:1px solid var(--line);
-    border-radius:12px;padding:10px 14px;font-size:14px;font-family:inherit;color:var(--ink)}
-  .filters input{flex:1;min-width:0}
   .filters input:focus,.filters select:focus{outline:none;border-color:var(--mint)}
-  .btn-p{background:var(--ink);color:#fff;border:none;border-radius:12px;padding:11px 20px;
-    font-size:14px;font-weight:700;cursor:pointer;background:var(--grad);color:#0B0E14}
+  .btn-p{background:var(--grad);color:#0B0E14;border:none;border-radius:12px;padding:11px 20px;
+    font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap}
+  .summary{margin-top:14px;background:var(--card);border:1px solid var(--line);border-radius:18px;
+    padding:18px 22px;display:flex;gap:36px;align-items:center;flex-wrap:wrap}
+  .summary b{display:block;font-size:22px}
+  .summary span{font-size:12px;color:var(--muted)}
+  .density-roomy .row{margin-bottom:28px}
+  .density-roomy .row h1{font-size:27px}
+  .density-roomy .filters{margin-bottom:24px}
+  .density-roomy .filters input,.density-roomy .filters select{padding:14px 16px;font-size:15px}
+  .density-roomy .btn-p{padding:14px 26px;font-size:15px}
+  .density-roomy td{padding:22px 16px;font-size:15.5px}
+  .density-roomy th{padding:16px 12px;font-size:12px}
   table{width:100%;border-collapse:collapse;font-size:14px;background:var(--card);
     border:1px solid var(--line);border-radius:18px;overflow:hidden}
   th{text-align:left;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;padding:12px}
@@ -36,7 +43,7 @@
   .dlg .btn{margin-top:0}
 {% endblock %}
 {% block content %}
-<div class="page">
+<div class="page density-{{ density|default:'standard' }}">
   <div class="row">
     <h1>Expenses</h1>
     <button class="btn-p" onclick="document.getElementById('ov').classList.add('open')">+ Add expense</button>
@@ -67,6 +74,11 @@
     {% endfor %}
     </tbody>
   </table>
+  </div>
+  <div class="summary">
+    <div><b>{{ summary.count }}</b><span>{% if summary.count == 1 %}expense{% else %}expenses{% endif %}{% if is_filtered %} matching filters{% endif %}</span></div>
+    <div><b>{{ summary.total|floatformat:0 }} {{ currency }}</b><span>total</span></div>
+  </div>
   {% else %}
   {% if is_filtered %}
   <div class="empty">No expenses match your filters.</div>

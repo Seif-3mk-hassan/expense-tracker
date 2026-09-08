@@ -71,6 +71,24 @@ def filter_expenses(user, params):
     return expenses, query, category_id
 
 
+def expense_list_context(user, params, form=None, show_modal=False):
+    """Shared context for the expenses page, including summary and density."""
+    expenses, query, category_id = filter_expenses(user, params)
+    total = expenses.aggregate(total=Sum("amount"))["total"] or 0
+    count = expenses.count()
+    return {
+        "expenses": expenses,
+        "form": form or ExpenseForm(user=user),
+        "show_modal": show_modal,
+        "q": query,
+        "selected_category": category_id,
+        "categories": Category.objects.for_user(user).filter(active=True),
+        "is_filtered": bool(query or category_id),
+        "summary": {"count": count, "total": total},
+        "density": "roomy" if count <= 10 else "standard",
+    }
+
+
 class ExpenseListView(OwnerScopedMixin, ListView):
     template_name = "ledger/expense_list.html"
     context_object_name = "expenses"
@@ -81,19 +99,8 @@ class ExpenseListView(OwnerScopedMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        _, query, category_id = filter_expenses(self.request.user, self.request.GET)
-        context.update(
-            {
-                "form": ExpenseForm(user=self.request.user),
-                "show_modal": self.request.GET.get("modal") == "1",
-                "q": query,
-                "selected_category": category_id,
-                "categories": Category.objects.for_user(self.request.user).filter(
-                    active=True
-                ),
-                "is_filtered": bool(query or category_id),
-            }
-        )
+        context.update(expense_list_context(self.request.user, self.request.GET))
+        context["show_modal"] = self.request.GET.get("modal") == "1"
         return context
 
 
@@ -113,23 +120,13 @@ class ExpenseCreateView(OwnerScopedMixin, CreateView):
 
     def form_invalid(self, form):
         if self.request.POST.get("from_modal"):
-            expenses, query, category_id = filter_expenses(
-                self.request.user, self.request.GET
+            context = expense_list_context(
+                self.request.user, self.request.GET, form=form, show_modal=True
             )
             return render(
                 self.request,
                 "ledger/expense_list.html",
-                {
-                    "expenses": expenses,
-                    "form": form,
-                    "show_modal": True,
-                    "q": query,
-                    "selected_category": category_id,
-                    "categories": Category.objects.for_user(self.request.user).filter(
-                        active=True
-                    ),
-                    "is_filtered": bool(query or category_id),
-                },
+                context,
                 status=400,
             )
         return super().form_invalid(form)

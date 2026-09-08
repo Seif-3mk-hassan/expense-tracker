@@ -937,6 +937,43 @@ class UiPolishTests(TestCase):
         self.assertNotIn("🍔", content)
 
 
+class ExpenseDensityTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user("density")
+        self.food = Category.objects.for_user(self.user).get(name="Food")
+        self.client.force_login(self.user)
+
+    def _add(self, n, note="x"):
+        from datetime import date
+
+        for i in range(n):
+            Expense.objects.create(
+                owner=self.user, amount=10, date=date(2026, 9, 1),
+                category=self.food, note=f"{note} {i}",
+            )
+
+    def test_few_rows_use_roomy_density_with_summary(self):
+        self._add(3)
+        content = self.client.get(reverse("expense-list")).content.decode()
+        self.assertIn('class="page density-roomy"', content)
+        self.assertIn("<b>3</b>", content)
+        self.assertIn("<b>30 EGP</b>", content)
+
+    def test_many_rows_use_standard_density(self):
+        self._add(11)
+        content = self.client.get(reverse("expense-list")).content.decode()
+        self.assertIn('class="page density-standard"', content)
+        self.assertNotIn('class="page density-roomy"', content)
+
+    def test_summary_follows_filters(self):
+        self._add(2, note="lunch")
+        self._add(1, note="uber")
+        content = self.client.get(reverse("expense-list") + "?q=lunch").content.decode()
+        self.assertIn("<b>2</b>", content)
+        self.assertIn("<b>20 EGP</b>", content)
+        self.assertIn("matching filters", content)
+
+
 class ResponsiveLayoutTests(TestCase):
     """Tripwires for the ET-34 responsive pass: hooks must stay in the markup."""
 
