@@ -95,5 +95,29 @@
       </div>
     </section>
   </div>
+
+  <div class="grid">
+    <section class="card2">
+      <div class="head"><h2>Recent expenses</h2><a href="{% url 'expense-list' %}">View all →</a></div>
+      <div class="hint">Your latest transactions</div>
+      <table>
+        <tr><th>Note</th><th>Category</th><th>Date</th><th style="text-align:right">Amount</th></tr>
+        {% for e in recent %}
+        <tr><td>{{ e.note|default:"—" }}</td><td>{{ e.category }}</td><td>{{ e.date }}</td><td class="r">{{ e.amount|floatformat:0 }} EGP</td></tr>
+        {% empty %}
+        <tr><td colspan="4" style="color:var(--muted)">Nothing here yet.</td></tr>
+        {% endfor %}
+      </table>
+    </section>
+    <section class="card2">
+      <div class="head"><h2>Budgets</h2><a href="{% url 'budget-list' %}">Manage →</a></div>
+      <div class="hint">{{ hero.month_label }} limits</div>
+      {% for b in budgets %}
+      {% include "ledger/_budget_bar.html" with b=b %}
+      {% empty %}
+      <p style="color:var(--muted);font-size:13px">No budgets this month.</p>
+      {% endfor %}
+    </section>
+  </div>
 </div>
 {% endblock %}

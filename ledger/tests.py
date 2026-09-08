@@ -545,3 +545,46 @@ class DashboardChartsTests(TestCase):
         response = self.client.get(reverse("home"))
         self.assertContains(response, "No spending this month yet.")
         self.assertContains(response, "conic-gradient(#2A3350 0 100%)", html=False)
+
+
+class DashboardRecentTests(TestCase):
+    def setUp(self):
+        from datetime import date, timedelta
+
+        self.user = User.objects.create_user("recent")
+        self.other = User.objects.create_user("stranger")
+        self.food = Category.objects.for_user(self.user).get(name="Food")
+        self.today = date.today()
+        for back in range(7):
+            Expense.objects.create(
+                owner=self.user,
+                amount=10 + back,
+                date=self.today - timedelta(days=back),
+                category=self.food,
+                note=f"day {back}",
+            )
+        other_food = Category.objects.for_user(self.other).get(name="Food")
+        Expense.objects.create(
+            owner=self.other, amount=9999, date=self.today, category=other_food
+        )
+        self.client.force_login(self.user)
+
+    def test_recent_shows_five_latest_own_only(self):
+        recent = list(self.client.get(reverse("home")).context["recent"])
+        self.assertEqual(len(recent), 5)
+        self.assertEqual(recent[0].note, "day 0")
+        self.assertTrue(all(e.owner == self.user for e in recent))
+
+    def test_view_all_and_manage_links_present(self):
+        response = self.client.get(reverse("home"))
+        self.assertContains(response, reverse("expense-list"))
+        self.assertContains(response, reverse("budget-list"))
+
+    def test_dashboard_budgets_match_month(self):
+        budgets = list(self.client.get(reverse("home")).context["budgets"])
+        self.assertEqual(len(budgets), 5)
+        self.assertTrue(all(b.owner == self.user for b in budgets))
+
+    def test_modal_param_opens_add_modal(self):
+        response = self.client.get(reverse("expense-list") + "?modal=1")
+        self.assertContains(response, 'class="ov open"')

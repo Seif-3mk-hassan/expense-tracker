@@ -79,7 +79,7 @@ class ExpenseListView(OwnerScopedMixin, ListView):
         context.update(
             {
                 "form": ExpenseForm(user=self.request.user),
-                "show_modal": False,
+                "show_modal": self.request.GET.get("modal") == "1",
                 "q": query,
                 "selected_category": category_id,
                 "categories": Category.objects.for_user(self.request.user).filter(
@@ -204,6 +204,12 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             "month_label": ref.strftime("%B %Y"),
         }
         context["ref_month"] = ref.strftime("%Y-%m")
+        context["recent"] = Expense.objects.for_user(self.request.user)[:5]
+        context["budgets"] = (
+            Budget.objects.for_user(self.request.user)
+            .filter(month=start)
+            .select_related("category")
+        )
         context.update(self._weekly_context(today))
         context.update(self._donut_context(ref))
         return context

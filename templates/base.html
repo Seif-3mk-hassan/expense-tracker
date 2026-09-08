@@ -54,5 +54,20 @@
 <main class="wrap">
   {% block content %}{% endblock %}
 </main>
+<script>
+document.addEventListener('keydown', function(e){
+  var tag = (document.activeElement && document.activeElement.tagName) || '';
+  var typing = /INPUT|SELECT|TEXTAREA/.test(tag);
+  if (e.key === 'Escape') {
+    var ov = document.getElementById('ov');
+    if (ov) ov.classList.remove('open');
+  }
+  if ((e.key === 'n' || e.key === 'N') && !typing) {
+    var modal = document.getElementById('ov');
+    if (modal) { modal.classList.add('open'); }
+    else { window.location = "{% url 'expense-list' %}?modal=1"; }
+  }
+});
+</script>
 </body>
 </html>
