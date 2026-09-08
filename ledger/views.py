@@ -17,6 +17,7 @@ from .analytics import (
     category_sums,
     daily_average,
     donut_style,
+    last_6_months,
     last_n_days,
     month_shift,
     month_total,
@@ -179,6 +180,42 @@ class BudgetUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_queryset(self):
         return Budget.objects.for_user(self.request.user)
+
+
+class InsightsView(LoginRequiredMixin, TemplateView):
+    """Six-month trends plus budget pressure and one auto tip (US-15)."""
+
+    template_name = "ledger/insights.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        today = timezone.now().date()
+        ref = parse_month_param(self.request.GET) or today
+        history = last_6_months(self.request.user, ref)
+        peak = max([h["total"] for h in history] or [0])
+        for entry in history:
+            entry["pct"] = (
+                round(float(entry["total"] / peak) * 100) if peak else 0
+            )
+        start, _ = month_bounds(ref)
+        ensure_month_budgets(self.request.user, start)
+        budgets = list(
+            Budget.objects.for_user(self.request.user)
+            .filter(month=start)
+            .select_related("category")
+            .order_by("-limit")
+        )
+        strained = [b for b in budgets if b.is_warning]
+        tip = max(strained, key=lambda b: b.percent_used) if strained else None
+        context.update(
+            {
+                "history": history,
+                "budgets": budgets,
+                "tip": tip,
+                "month_label": ref.strftime("%B %Y"),
+            }
+        )
+        return context
 
 
 class DashboardView(LoginRequiredMixin, TemplateView):

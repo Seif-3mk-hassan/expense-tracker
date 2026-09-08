@@ -633,3 +633,56 @@ class MonthContextTests(TestCase):
             response.context["hero"]["month_label"],
             self.today.strftime("%B %Y"),
         )
+
+
+class InsightsTests(TestCase):
+    def setUp(self):
+        from datetime import date
+
+        from .analytics import month_shift
+
+        self.user = User.objects.create_user("insight")
+        self.other = User.objects.create_user("stranger")
+        self.today = date.today()
+        self.food = Category.objects.for_user(self.user).get(name="Food")
+        Expense.objects.create(
+            owner=self.user, amount=2860, date=self.today, category=self.food
+        )
+        prev = month_shift(self.today, -1).replace(day=5)
+        Expense.objects.create(
+            owner=self.user, amount=500, date=prev, category=self.food
+        )
+        other_food = Category.objects.for_user(self.other).get(name="Food")
+        Expense.objects.create(
+            owner=self.other, amount=7777, date=self.today, category=other_food
+        )
+        self.client.force_login(self.user)
+
+    def test_history_covers_six_months(self):
+        history = self.client.get(reverse("insights")).context["history"]
+        self.assertEqual(len(history), 6)
+        self.assertEqual(history[-1]["label"], self.today.strftime("%b"))
+        current = [h for h in history if h["label"] == self.today.strftime("%b")]
+        self.assertEqual(current[0]["total"], Decimal("2860.00"))
+
+    def test_tip_names_worst_strained_category(self):
+        response = self.client.get(reverse("insights"))
+        tip = response.context["tip"]
+        self.assertIsNotNone(tip)
+        self.assertEqual(tip.category.name, "Food")
+        self.assertContains(response, "Food is at 95%")
+
+    def test_no_tip_when_nothing_strained(self):
+        Expense.objects.for_user(self.user).delete()
+        response = self.client.get(reverse("insights"))
+        self.assertIsNone(response.context["tip"])
+        self.assertNotContains(response, "Tip:")
+
+    def test_other_users_data_excluded(self):
+        history = self.client.get(reverse("insights")).context["history"]
+        total = sum((h["total"] for h in history), Decimal("0"))
+        self.assertEqual(total, Decimal("3360.00"))
+
+    def test_login_required(self):
+        self.client.logout()
+        self.assertEqual(self.client.get(reverse("insights")).status_code, 302)

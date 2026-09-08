@@ -8,5 +8,6 @@ urlpatterns = [
     path("accounts/", include("accounts.urls")),
     path("expenses/", include("ledger.urls")),
     path("budgets/", include("ledger.budgets_urls")),
+    path("insights/", include("ledger.insights_urls")),
     path("", DashboardView.as_view(), name="home"),
 ]

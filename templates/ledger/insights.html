@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Insights — Xpens{% endblock %}
+{% block extra_css %}
+  .page{max-width:1080px;margin:0 auto;padding:28px 20px 60px}
+  .page h1{font-size:22px;margin-bottom:18px}
+  .grid{display:grid;grid-template-columns:1.5fr 1fr;gap:14px}
+  @media(max-width:1000px){.grid{grid-template-columns:1fr}}
+  .card2{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px}
+  .card2 h2{font-size:15px}
+  .hint{font-size:12.5px;color:var(--muted);margin:3px 0 14px}
+  .hbar{display:flex;align-items:center;gap:12px;margin-bottom:12px;font-size:13.5px}
+  .hbar .m{width:36px;color:var(--muted);font-weight:600}
+  .hbar .grow{flex:1;height:10px;background:#242C44;border-radius:99px;overflow:hidden}
+  .hbar .grow i{display:block;height:100%;background:var(--grad);border-radius:99px}
+  .hbar em{font-style:normal;font-weight:700;min-width:70px;text-align:right}
+  .bud{margin-bottom:13px}
+  .bud .row{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px}
+  .pbar{height:9px;background:#242C44;border-radius:99px;overflow:hidden}
+  .pbar i{display:block;height:100%;border-radius:99px;background:var(--grad)}
+  .pbar i.warn{background:linear-gradient(135deg,#FBBF24,#FB7185)}
+  .tip{margin-top:14px;background:rgba(94,234,212,.08);border:1px solid rgba(94,234,212,.3);
+    border-radius:12px;padding:12px 14px;font-size:13px}
+{% endblock %}
+{% block content %}
+<div class="page">
+  <h1>Insights</h1>
+  <div class="grid">
+    <section class="card2">
+      <h2>Spending by month</h2>
+      <div class="hint">Last 6 months</div>
+      {% for h in history %}
+      <div class="hbar"><span class="m">{{ h.label }}</span><div class="grow"><i style="width:{{ h.pct }}%"></i></div><em>{{ h.total|floatformat:0 }}</em></div>
+      {% endfor %}
+    </section>
+    <section class="card2">
+      <h2>Budget pressure</h2>
+      <div class="hint">{{ month_label }}</div>
+      {% for b in budgets %}
+      {% include "ledger/_budget_bar.html" with b=b %}
+      {% endfor %}
+      {% if tip %}
+      <div class="tip">Tip: {{ tip.category.name }} is at {{ tip.percent_used }}% — consider raising it next month.</div>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}
