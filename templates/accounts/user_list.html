@@ -19,6 +19,7 @@
 <div class="page">
   <h1>Users</h1>
   <p class="hint">Standing only. Spending data is never shown here by design.</p>
+  <div class="tscroll">
   <table>
     <tr><th>Username</th><th>Groups</th><th>Status</th><th>Joined</th><th></th></tr>
     {% for u in users %}
@@ -31,5 +32,6 @@
     </tr>
     {% endfor %}
   </table>
+  </div>
 </div>
 {% endblock %}

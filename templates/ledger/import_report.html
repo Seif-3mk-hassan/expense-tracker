@@ -5,12 +5,14 @@
   <h1>Import report</h1>
   <p class="sub">{{ imported }} imported · {{ rejected|length }} rejected.</p>
   {% if rejected %}
-  <table style="width:100%;font-size:13.5px">
+  <div class="tscroll">
+  <table style="width:100%;font-size:13.5px;min-width:420px">
     <tr><th style="text-align:left">Row</th><th style="text-align:left">Reason</th></tr>
     {% for index, reason in rejected %}
     <tr><td>{{ index }}</td><td>{{ reason }}</td></tr>
     {% endfor %}
   </table>
+  </div>
   {% else %}
   <p class="sub">Every row imported cleanly.</p>
   {% endif %}

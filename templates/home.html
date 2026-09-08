@@ -6,11 +6,11 @@
     margin-bottom:14px;display:flex;align-items:center;gap:30px;flex-wrap:wrap}
   .hero>div:first-child{flex:1;min-width:230px}
   .hero small{font-size:12px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;opacity:.65}
-  .hero .num{font-size:50px;font-weight:800;letter-spacing:-2px;line-height:1.1}
+  .hero .num{font-size:clamp(34px,5vw,50px);font-weight:800;letter-spacing:-2px;line-height:1.1}
   .hero .cap{font-size:13px;font-weight:600;opacity:.75;margin-top:4px}
   .htrack{height:8px;background:rgba(11,14,20,.18);border-radius:99px;overflow:hidden;margin-top:12px}
   .htrack i{display:block;height:100%;background:#0B0E14;border-radius:99px;opacity:.85}
-  .hstat{margin-left:auto;display:flex;gap:34px}
+  .hstat{margin-left:auto;display:flex;gap:16px 34px;flex-wrap:wrap}
   .hstat b{display:block;font-size:22px}
   .hstat span{font-size:12px;font-weight:600;opacity:.7}
   .grid{display:grid;grid-template-columns:1.5fr 1fr;gap:14px;margin-bottom:14px}
@@ -54,6 +54,13 @@
   .pbar{height:9px;background:#242C44;border-radius:99px;overflow:hidden}
   .pbar i{display:block;height:100%;border-radius:99px;background:var(--grad)}
   .pbar i.warn{background:linear-gradient(135deg,#FBBF24,#FB7185)}
+  @media(max-width:640px){
+    .hero{padding:20px}
+    .hero .hstat{margin-left:0}
+    .chart{height:180px}
+    .col b{font-size:10px}
+    .donut-row{flex-direction:column;align-items:flex-start}
+  }
 {% endblock %}
 {% block content %}
 <div class="page">
@@ -100,6 +107,7 @@
     <section class="card2">
       <div class="head"><h2>Recent expenses</h2><a href="{% url 'expense-list' %}">View all →</a></div>
       <div class="hint">Your latest transactions</div>
+      <div class="tscroll">
       <table>
         <tr><th>Note</th><th>Category</th><th>Date</th><th style="text-align:right">Amount</th></tr>
         {% for e in recent %}
@@ -108,6 +116,7 @@
         <tr><td colspan="4" style="color:var(--muted)">Nothing here yet.</td></tr>
         {% endfor %}
       </table>
+      </div>
     </section>
     <section class="card2">
       <div class="head"><h2>Budgets</h2><a href="{% url 'budget-list' %}">Manage →</a></div>

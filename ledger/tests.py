@@ -899,6 +899,36 @@ class EmptyAndErrorStatesTests(TestCase):
         self.assertTemplateUsed(response, "404.html")
 
 
+class ResponsiveLayoutTests(TestCase):
+    """Tripwires for the ET-34 responsive pass: hooks must stay in the markup."""
+
+    def setUp(self):
+        self.user = User.objects.create_user("viewport")
+        self.client.force_login(self.user)
+
+    def test_pages_carry_viewport_and_breakpoints(self):
+        for url in (
+            reverse("home"),
+            reverse("expense-list"),
+            reverse("budget-list"),
+            reverse("insights"),
+            reverse("settings"),
+        ):
+            content = self.client.get(url).content.decode()
+            self.assertIn("viewport", content)
+            self.assertIn("@media", content)
+
+    def test_tables_scroll_inside_cards(self):
+        for url in (reverse("home"), reverse("expense-list")):
+            content = self.client.get(url).content.decode()
+            self.assertIn("tscroll", content)
+
+    def test_topbar_collapses_on_small_screens(self):
+        content = self.client.get(reverse("home")).content.decode()
+        self.assertIn(".tsearch{display:none}", content)
+        self.assertIn("flex-wrap:wrap", content)
+
+
 class PreferencesTests(TestCase):
     def setUp(self):
         from datetime import date
